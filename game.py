@@ -6,24 +6,52 @@ import ctypes
 from OpenGL.GL.shaders import compileProgram, compileShader
 import os
 
+from filereader import pl_create, faces_create, camera_create
+from face import Face
+
 class App:
     
     def __init__(self):
         pygame.init()
+
+        pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MAJOR_VERSION, 3)
+        pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MINOR_VERSION, 3)
+        pygame.display.gl_set_attribute(pygame.GL_CONTEXT_PROFILE_MASK, pygame.GL_CONTEXT_PROFILE_CORE)
+        pygame.display.gl_set_attribute(pygame.GL_DOUBLEBUFFER, 1)
+
         infoObject = pygame.display.Info()
         sw = infoObject.current_w
         sh = infoObject.current_h
         pygame.display.set_mode((sw - 50, sh - 50), pygame.DOUBLEBUF | pygame.OPENGL | pygame.RESIZABLE)
         self.clock = pygame.time.Clock()
         glClearColor(1, 1, 1, 0.1)
+
+        print("\n--- OpenGL Context Info ---")
+        try:
+            print("Vendor:", glGetString(GL_VENDOR).decode())
+            print("Renderer:", glGetString(GL_RENDERER).decode())
+            print("OpenGL Version:", glGetString(GL_VERSION).decode())
+            print("GLSL Version:", glGetString(GL_SHADING_LANGUAGE_VERSION).decode())
+        except Exception as e:
+            print(f"Error retrieving OpenGL info: {e}")
+            print("This might happen if context creation failed or is too old.")
+        print("-------------------------\n")
+
         vertex_shader_path = os.path.join(os.path.dirname(__file__), "shaders/vertex.txt")
         fragment_shader_path = os.path.join(os.path.dirname(__file__), "shaders/fragment.txt")
         self.shader = self.createShader(
             vertex_shader_path, 
             fragment_shader_path
-            )      
+            )
         glUseProgram(self.shader)
-        self.triangle = Triangle()
+        #self.triangle = Triangle()
+
+        self.camera = camera_create("camera.json")
+        self.points = pl_create("points.json")
+        self.faces = faces_create("faces.json")
+        for key in self.faces.keys():
+            self.faces[key] = Face(self.faces[key], self.points)
+
         self.mainloop()
 
     def createShader(self, vertexFilepath, fragmentFilepath):
@@ -47,16 +75,20 @@ class App:
                     running = False
             glClear(GL_COLOR_BUFFER_BIT)
 
-            glUseProgram(self.shader)
+            '''glUseProgram(self.shader)
             glBindVertexArray(self.triangle.vao)
-            glDrawArrays(GL_TRIANGLES, 0, self.triangle.vertex_count)
+            glDrawArrays(GL_TRIANGLES, 0, self.triangle.vertex_count)'''
+            for face in self.faces.keys():
+                self.faces[face].draw()
             pygame.display.flip()
             self.clock.tick(60)
         
         self.quit()
 
     def quit(self):
-        self.triangle.destroy()
+        #self.triangle.destroy()
+        for face in self.faces.keys():
+            self.faces[face].destroy()
         glDeleteProgram(self.shader)
         pygame.quit()
 
