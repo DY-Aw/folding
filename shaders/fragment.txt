@@ -1,0 +1,10 @@
+#version 330 core
+
+in vec3 fragmentColor; // Input color from vertex shader (interpolated)
+
+out vec4 color; // Final output color for the fragment
+
+void main()
+{
+    color = vec4(fragmentColor, 1.0); // Output the interpolated color with full opacity
+}
