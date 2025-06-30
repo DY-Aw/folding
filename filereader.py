@@ -2,6 +2,9 @@ import json
 import os
 import sys
 
+from OpenGL.GL import *
+from OpenGL.GL.shaders import compileProgram, compileShader
+
 from face import Face
 
 def get_resource_path(file):
@@ -35,3 +38,17 @@ def faces_create(file_name):
     faces = loaded_data['faces']
     return faces
     
+def shader_create(vertexfile, fragmentfile):
+    vertex_path = os.path.join(os.path.dirname(__file__), "shaders/"+vertexfile)
+    fragment_path = os.path.join(os.path.dirname(__file__), "shaders/"+fragmentfile)
+    with open(vertex_path, 'r') as f:
+        vertex_source = f.read()
+    
+    with open(fragment_path, 'r') as f:
+        fragment_source = f.read()
+
+    shader = compileProgram(
+        compileShader(vertex_source, GL_VERTEX_SHADER),
+        compileShader(fragment_source, GL_FRAGMENT_SHADER)
+    )
+    return shader
