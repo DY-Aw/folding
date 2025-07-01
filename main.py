@@ -5,6 +5,7 @@ import pyrr
 
 from filereader import *
 from facehandler import FaceHandler
+from foldingengine import Fold
 
 
 class App:
@@ -29,6 +30,8 @@ class App:
         for face in self.faces.keys():
             self.facehandler.update(face, self.faces[face])
 
+        self.foldengine = Fold(self.facehandler, self.points)
+
         # Use actual window aspect ratio
         aspect_ratio = (window_width - 50) / (window_height - 50)
         projection_transform = pyrr.matrix44.create_perspective_projection(
@@ -42,6 +45,7 @@ class App:
         )
 
         self.modelMatrixLocation = glGetUniformLocation(self.shader, "model")
+
         self.mainloop()
     
     def mainloop(self):
@@ -54,9 +58,11 @@ class App:
                     # Handle window resize
                     glViewport(0, 0, event.w, event.h)
             for face in self.facehandler.faces.values():
-                face.eulers[0] += 0.5
-                face.eulers[1] += 0.3
-                face.eulers[2] += 0.2
+                face.eulers[0] +=0.2
+                face.eulers[1] +=0.1
+                face.eulers[2] += 0.1
+            
+            self.foldengine.fold("E", "F", "F0", 1)
 
             # Clear both color and depth buffers
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)

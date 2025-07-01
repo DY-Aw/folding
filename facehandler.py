@@ -6,6 +6,7 @@ class FaceHandler:
     def __init__(self, points):
         self.points = points
         self.faces = {}
+        self.transformations = {}
 
     def update(self, face, faceinfo):
         faceclass = Face(faceinfo, self.points)
@@ -15,6 +16,8 @@ class FaceHandler:
         face_matrices = self.modeltransform()
         for face in self.faces.keys():
             model_transform = face_matrices[face]
+            if face in self.transformations.keys():
+                model_transform = pyrr.matrix44.multiply(self.transformations[face], model_transform)
             self.faces[face].draw(modelMatrixLocation, model_transform)
 
     def modeltransform(self):
@@ -43,6 +46,12 @@ class FaceHandler:
             )
             face_matrices.update({face: model_transform})
         return face_matrices
+    
+    def updatemodelmatrix(self, face, matrix):
+        if face not in self.transformations.keys():
+            self.transformations.update({face: matrix})
+        else:
+            self.transformations[face] = pyrr.matrix44.multiply(matrix, self.transformations[face])
 
     def destroy(self):
         for face in self.faces.values():
