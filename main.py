@@ -30,7 +30,9 @@ class App:
 
         self.points = pl_create("points.json")
         self.faces = faces_create("faces.json")
-        self.facehandler = FaceHandler(self.points)
+
+        self.face_color_uniform_location = glGetUniformLocation(self.shader, "faceColor")
+        self.facehandler = FaceHandler(self.points, self.face_color_uniform_location, self.camera)
 
         for face in self.faces.keys():
             self.facehandler.update(face, self.faces[face])

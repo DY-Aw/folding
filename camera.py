@@ -10,6 +10,13 @@ class Camera:
         self.pitch = math.radians(pitch)
         self.zoom = zoom
 
+    def getFacing(self):
+        y = math.sin(self.pitch)
+        x = math.cos(self.yaw) * math.cos(self.pitch)
+        z = math.sin(self.yaw) * math.cos(self.pitch)
+        self.facing = (x, y, z)
+        
+
     def orbit(self, yaw, pitch):
         self.yaw += yaw
         self.pitch += pitch
@@ -26,9 +33,8 @@ class Camera:
     
     def calculateViewMatrix(self, modelViewLocation):
         # Facing unit vector
-        yc = math.sin(self.pitch)
-        xc = math.cos(self.yaw) * math.cos(self.pitch)
-        zc = math.sin(self.yaw) * math.cos(self.pitch)
+        self.getFacing()
+        xc, yc, zc = self.facing
 
         # Scale facing vector
         x = self.zoom * xc

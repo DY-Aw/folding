@@ -1,10 +1,12 @@
 #version 330 core
 
-in vec3 fragmentColor;
+out vec4 FragColor;
 
-out vec4 color;
+// REMOVE: in vec3 fragmentColor; // No longer receiving interpolated vertex color
+
+uniform vec3 faceColor; // NEW: Uniform to receive the solid color for the current face
 
 void main()
 {
-    color = vec4(fragmentColor, 1.0);
+    FragColor = vec4(faceColor, 1.0); // Use the uniform color for the entire fragment
 }
