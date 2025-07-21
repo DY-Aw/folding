@@ -7,6 +7,8 @@ from filereader import *
 from facehandler import FaceHandler
 from foldingengine import Fold
 
+from camera import Camera
+
 
 class App:
     def __init__(self):
@@ -22,6 +24,8 @@ class App:
         
         self.shader = shader_create("vertex.txt", "fragment.txt") 
         glUseProgram(self.shader)
+
+        self.camera = Camera(camera_create("camera.json"))
 
         self.points = pl_create("points.json")
         self.faces = faces_create("faces.json")
@@ -39,12 +43,14 @@ class App:
             near = 0.1, far = 10, dtype=np.float32
         )
 
+        # Define projection matrix
         glUniformMatrix4fv(
             glGetUniformLocation(self.shader, "projection"),
             1, GL_FALSE, projection_transform
         )
 
         self.modelMatrixLocation = glGetUniformLocation(self.shader, "model")
+        self.modelViewLocation = glGetUniformLocation(self.shader, "view")
 
         self.mainloop()
     
@@ -58,11 +64,15 @@ class App:
                     # Handle window resize
                     glViewport(0, 0, event.w, event.h)
             for face in self.facehandler.faces.values():
-                face.eulers[0] +=0.2
+                '''face.eulers[0] +=0.2'''
                 face.eulers[1] +=0.1
-                face.eulers[2] += 0.1
+                '''face.eulers[2] +=0.1'''
             
             self.foldengine.fold("E", "F", "F0", 1)
+
+            self.camera.yaw += 0.01
+
+            self.camera.calculateViewMatrix(self.modelViewLocation)
 
             # Clear both color and depth buffers
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)

@@ -7,8 +7,8 @@ class Face:
 
     def __init__(self, face_data, points):
         #-------TEMP--------
-        self.position = [0, 0, -3]
-        self.eulers = [0, 45, 0]
+        self.position = [0, 0, 0]
+        self.eulers = [0, 0, 0]
         #---------------
 
         self.vertices = face_data['vertices']
@@ -78,7 +78,9 @@ class Face:
     
 
     def draw(self, modelMatrixLocation, model_transform):
+        # Define model matrix
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, model_transform)
+
         glBindVertexArray(self.vao)
         glDrawArrays(GL_TRIANGLES, 0, self.vertex_count)
 

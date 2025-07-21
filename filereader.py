@@ -23,13 +23,10 @@ def camera_create(file_name):
     file_path = get_resource_path(file_name)
     with open(file_path, 'r') as f:
         loaded_data = json.load(f)
-    x = loaded_data['x']
-    y = loaded_data['y']
-    z = loaded_data['z']
     yaw = loaded_data['yaw']
     pitch = loaded_data['pitch']
-    hfov = loaded_data['hfov']
-    return x, y, z, yaw, pitch, hfov
+    zoom = loaded_data['zoom']
+    return yaw, pitch, zoom
 
 def faces_create(file_name):
     file_path = get_resource_path(file_name)
