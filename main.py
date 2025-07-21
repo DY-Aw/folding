@@ -18,6 +18,7 @@ class App:
         window_height = infoObject.current_h
         self.screen = pygame.display.set_mode((window_width - 50, window_height - 50), pygame.DOUBLEBUF | pygame.OPENGL | pygame.RESIZABLE)
         self.clock = pygame.time.Clock()
+        self.buttondown = False
         
         glEnable(GL_DEPTH_TEST)
         glClearColor(0.1, 0.1, 0.1, 1.0)
@@ -63,14 +64,25 @@ class App:
                 elif (event.type == pygame.VIDEORESIZE):
                     # Handle window resize
                     glViewport(0, 0, event.w, event.h)
-            for face in self.facehandler.faces.values():
-                '''face.eulers[0] +=0.2'''
-                face.eulers[1] +=0.1
-                '''face.eulers[2] +=0.1'''
+
+                # Mouse orbit
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 2:
+                        self.buttondown = True
+                elif event.type == pygame.MOUSEBUTTONUP:
+                    if event.button == 2:
+                        self.buttondown = False
+                elif event.type == pygame.MOUSEMOTION:
+                    if self.buttondown:
+                        sensitivity = 0.01
+                        self.camera.orbit(event.rel[0] * sensitivity, event.rel[1] * sensitivity)
+                
+                # Scroll zoom
+                elif event.type == pygame.MOUSEWHEEL:
+                    scrollsens = 0.1
+                    self.camera._zoom(-event.y * scrollsens)
             
             self.foldengine.fold("E", "F", "F0", 1)
-
-            self.camera.yaw += 0.01
 
             self.camera.calculateViewMatrix(self.modelViewLocation)
 

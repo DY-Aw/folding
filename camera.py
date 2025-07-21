@@ -9,6 +9,20 @@ class Camera:
         self.yaw = math.radians(yaw)
         self.pitch = math.radians(pitch)
         self.zoom = zoom
+
+    def orbit(self, yaw, pitch):
+        self.yaw += yaw
+        self.pitch += pitch
+
+        if self.pitch > math.radians(90):
+            self.pitch = math.radians(90)
+        if self.pitch < math.radians(-90):
+            self.pitch = math.radians(-90)
+    
+    def _zoom(self, zoom):
+        self.zoom += zoom
+        if self.zoom <= 0:
+            self.zoom = 0
     
     def calculateViewMatrix(self, modelViewLocation):
         # Facing unit vector

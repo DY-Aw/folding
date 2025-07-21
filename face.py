@@ -6,11 +6,6 @@ import pyrr
 class Face:
 
     def __init__(self, face_data, points):
-        #-------TEMP--------
-        self.position = [0, 0, 0]
-        self.eulers = [0, 0, 0]
-        #---------------
-
         self.vertices = face_data['vertices']
         self.points = points
 

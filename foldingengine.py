@@ -29,7 +29,7 @@ class Fold:
         )
 
 
-        self.facehandler.updatemodelmatrix(face, pyrr.matrix44.multiply(fromOrigin, pyrr.matrix44.multiply(rotationMatrix, toOrigin)))
+        self.facehandler.updateModelMatrix(face, pyrr.matrix44.multiply(fromOrigin, pyrr.matrix44.multiply(rotationMatrix, toOrigin)))
 
     def split(point1, point2, face):
         pass
