@@ -14,11 +14,19 @@ class App:
     def __init__(self):
         pygame.init()
         infoObject = pygame.display.Info()
-        window_width = infoObject.current_w
-        window_height = infoObject.current_h
-        self.screen = pygame.display.set_mode((window_width - 50, window_height - 50), pygame.DOUBLEBUF | pygame.OPENGL | pygame.RESIZABLE)
+        self.sw = infoObject.current_w
+        self.sh = infoObject.current_h
+        self.screen = pygame.display.set_mode((self.sw - 50, self.sh - 50), pygame.DOUBLEBUF | pygame.OPENGL | pygame.RESIZABLE)
         self.clock = pygame.time.Clock()
-        self.buttondown = False
+
+        #Constants ----------------
+        self.orbit = False
+        self.grab = False
+
+        self.orbitsens = 0.01
+        #-----------------------------
+
+
         
         glEnable(GL_DEPTH_TEST)
         glClearColor(0.1, 0.1, 0.1, 1.0)
@@ -40,8 +48,8 @@ class App:
         self.foldengine = Fold(self.facehandler, self.points)
 
         # Use actual window aspect ratio
-        aspect_ratio = (window_width - 50) / (window_height - 50)
-        projection_transform = pyrr.matrix44.create_perspective_projection(
+        aspect_ratio = (self.sw - 50) / (self.sh - 50)
+        self.projection_transform = pyrr.matrix44.create_perspective_projection(
             fovy = 45, aspect = aspect_ratio,
             near = 0.1, far = 10, dtype=np.float32
         )
@@ -49,7 +57,7 @@ class App:
         # Define projection matrix
         glUniformMatrix4fv(
             glGetUniformLocation(self.shader, "projection"),
-            1, GL_FALSE, projection_transform
+            1, GL_FALSE, self.projection_transform
         )
 
         self.modelMatrixLocation = glGetUniformLocation(self.shader, "model")
@@ -67,24 +75,28 @@ class App:
                     # Handle window resize
                     glViewport(0, 0, event.w, event.h)
 
-                # Mouse orbit
+                # Mouse
                 elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:
+                        self.grab = True
                     if event.button == 2:
-                        self.buttondown = True
+                        self.orbit = True
                 elif event.type == pygame.MOUSEBUTTONUP:
+                    if event.button == 1:
+                        self.grab = False
                     if event.button == 2:
-                        self.buttondown = False
+                        self.orbit = False
                 elif event.type == pygame.MOUSEMOTION:
-                    if self.buttondown:
-                        sensitivity = 0.01
-                        self.camera.orbit(event.rel[0] * sensitivity, event.rel[1] * sensitivity)
+                    if self.grab:
+                        #self.foldengine.fold("E", "F", "F0", event.rel[0] * self.grabsens)
+                        self.foldengine.foldGrab("E", "F", "F0", (pygame.mouse.get_pos(), event.rel, (self.sw, self.sh)), (self.camera.view_transform))
+                    if self.orbit:
+                        self.camera.orbit(event.rel[0] * self.orbitsens, -event.rel[1] * self.orbitsens)
                 
                 # Scroll zoom
                 elif event.type == pygame.MOUSEWHEEL:
                     scrollsens = 0.1
                     self.camera._zoom(-event.y * scrollsens)
-            
-            self.foldengine.fold("E", "F", "F0", 1)
 
             self.camera.calculateViewMatrix(self.modelViewLocation)
 

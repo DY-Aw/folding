@@ -10,9 +10,10 @@ class FaceHandler:
         self.faces = {}
         self.transformations = {}
 
-    def update(self, face, faceinfo):
+    def update(self, face, faceinfo, matrix=pyrr.matrix44.create_identity(dtype=np.float32)):
         faceclass = Face(faceinfo, self.points, self.face_color_uniform_location)
         self.faces.update({face: faceclass})
+        self.transformations.update({face: matrix})
 
     def drawfaces(self, modelMatrixLocation):
         for face in self.faces.keys():
@@ -22,10 +23,7 @@ class FaceHandler:
             self.faces[face].draw(modelMatrixLocation, model_transform, self.camera.facing)
     
     def updateModelMatrix(self, face, matrix):
-        if face not in self.transformations.keys():
-            self.transformations.update({face: matrix})
-        else:
-            self.transformations[face] = pyrr.matrix44.multiply(matrix, self.transformations[face])
+        self.transformations[face] = pyrr.matrix44.multiply(matrix, self.transformations[face])
 
     def destroy(self):
         for face in self.faces.values():

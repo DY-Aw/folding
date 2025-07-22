@@ -37,13 +37,13 @@ class Camera:
         xc, yc, zc = self.facing
 
         # Scale facing vector
-        x = self.zoom * xc
-        y = self.zoom * yc
-        z = self.zoom * zc
+        x = -self.zoom * xc
+        y = -self.zoom * yc
+        z = -self.zoom * zc
 
         eye = pyrr.vector3.create(x=x, y=y, z=z)
         target = pyrr.vector3.create(x=0.0, y=0.0, z=0.0)
         up = pyrr.vector3.create(x=0.0, y=1.0, z=0.0)
 
-        view_transform = pyrr.matrix44.create_look_at(eye, target, up, dtype=None)
-        glUniformMatrix4fv(modelViewLocation, 1, GL_FALSE, view_transform)
+        self.view_transform = pyrr.matrix44.create_look_at(eye, target, up, dtype=None)
+        glUniformMatrix4fv(modelViewLocation, 1, GL_FALSE, self.view_transform)
