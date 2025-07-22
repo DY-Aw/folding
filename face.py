@@ -40,7 +40,7 @@ class Face:
         sun_dot = normal.dot(self.sunlight)
         normalfacing = np.sign(pyrr.Vector3(facing).dot(normal))
         sun_dot *= normalfacing
-        multiplier = (-sun_dot / 2.5) + 0.7
+        multiplier = (sun_dot / 2.5) + 0.7
         self.color = [
             multiplier * c1,
             multiplier * c2,
