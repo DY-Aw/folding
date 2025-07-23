@@ -74,7 +74,18 @@ class App:
                     running = False
                 elif (event.type == pygame.VIDEORESIZE):
                     # Handle window resize
+                    self.sw = event.w
+                    self.sh = event.h
                     glViewport(0, 0, event.w, event.h)
+                    aspect_ratio = (self.sw - 50) / (self.sh - 50)
+                    self.projection_transform = pyrr.matrix44.create_perspective_projection(
+                        fovy = 45, aspect = aspect_ratio,
+                        near = 0.1, far = 10, dtype=np.float32
+                    )
+                    glUniformMatrix4fv(
+                        self.modelProjectionLocation,
+                        1, GL_FALSE, self.projection_transform
+                    )
 
                 # Mouse
                 elif event.type == pygame.MOUSEBUTTONDOWN:
