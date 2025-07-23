@@ -77,10 +77,22 @@ class Fold:
         )
 
         # Calculate change in angle
-        theta0 = math.atan(initialCoordinate[1]/initialCoordinate[0])
+        if initialCoordinate[0] == 0:
+            if initialCoordinate[1] > 0:
+                theta0 = math.pi/2
+            else:
+                theta0 = -math.pi/2
+        else:
+            theta0 = math.atan(initialCoordinate[1]/initialCoordinate[0])
         if initialCoordinate[0] < 0:
             theta0 += math.pi
-        theta1 = math.atan(finalCoordinate[1]/finalCoordinate[0])
+        if finalCoordinate[0] == 0:
+            if finalCoordinate[1] > 0:
+                theta1 = math.pi/2
+            else:
+                theta1 = -math.pi/2
+        else:
+            theta1 = math.atan(finalCoordinate[1]/finalCoordinate[0])
         if finalCoordinate[0] < 0:
             theta1 += math.pi
 
