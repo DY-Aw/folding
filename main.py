@@ -6,6 +6,7 @@ import pyrr
 from filereader import *
 from facehandler import FaceHandler
 from foldingengine import Fold
+from renderer import Renderer
 
 from camera import Camera
 
@@ -37,8 +38,13 @@ class App:
         self.points = pl_create("points.json")
         self.faces = faces_create("faces.json")
 
-        self.face_color_uniform_location = glGetUniformLocation(self.shader, "faceColor")
-        self.facehandler = FaceHandler(self.points, self.face_color_uniform_location, self.camera)
+        self.modelMatrixLocation = glGetUniformLocation(self.shader, "model")
+        self.modelViewLocation = glGetUniformLocation(self.shader, "view")
+        self.modelProjectionLocation = glGetUniformLocation(self.shader, "projection")
+        self.faceColorUniformLocation = glGetUniformLocation(self.shader, "faceColor")
+
+        self.facehandler = FaceHandler(self.points, self.faceColorUniformLocation)
+        self.renderer = Renderer(self.points, self.facehandler, self.camera, self.faceColorUniformLocation, self.modelMatrixLocation)
 
         for face in self.faces.keys():
             self.facehandler.update(face, self.faces[face])
@@ -54,12 +60,9 @@ class App:
 
         # Define projection matrix
         glUniformMatrix4fv(
-            glGetUniformLocation(self.shader, "projection"),
+            self.modelProjectionLocation,
             1, GL_FALSE, self.projection_transform
         )
-
-        self.modelMatrixLocation = glGetUniformLocation(self.shader, "model")
-        self.modelViewLocation = glGetUniformLocation(self.shader, "view")
 
         self.mainloop()
     
@@ -76,7 +79,9 @@ class App:
                 # Mouse
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:
-                        self.grab = True
+                        selected = self.facehandler.proximity(pygame.mouse.get_pos())
+                        if selected != None:
+                            self.grab = True
                     if event.button == 2:
                         self.orbit = True
                 elif event.type == pygame.MOUSEBUTTONUP:
@@ -85,10 +90,10 @@ class App:
                     if event.button == 2:
                         self.orbit = False
                 elif event.type == pygame.MOUSEMOTION:
-                    if self.grab:
-                        self.foldengine.foldGrab("E", "F", "F0", (pygame.mouse.get_pos(), event.rel, (self.sw, self.sh)), (self.camera.view_transform))
                     if self.orbit:
                         self.camera.orbit(event.rel[0] * self.orbitsens, -event.rel[1] * self.orbitsens)
+                    elif self.grab:
+                        self.foldengine.foldGrab("E", "F", selected, (pygame.mouse.get_pos(), event.rel, (self.sw, self.sh)), (self.camera.view_transform))
                 
                 # Scroll zoom
                 elif event.type == pygame.MOUSEWHEEL:
@@ -101,7 +106,16 @@ class App:
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
             glUseProgram(self.shader)
-            self.facehandler.drawfaces(self.modelMatrixLocation)
+            glEnable(GL_POLYGON_OFFSET_FILL)
+            glPolygonOffset(1.0, 1.0)
+            #self.facehandler.drawfaces(self.modelMatrixLocation)
+            for face in self.facehandler.faces.keys():
+                self.renderer.drawFace(face)
+            glDisable(GL_POLYGON_OFFSET_FILL)
+            if self.grab:
+                #self.renderer.drawLine(["A", "B"], (1, 1, 0), selected, 3)
+                self.renderer.drawOutline(selected, (1, 1, 0), 3.0)
+            #self.renderer.drawLine(["E", "F"], (0, 0, 1), "F0", 4)
             
             pygame.display.flip()
             self.clock.tick(60)

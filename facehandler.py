@@ -3,27 +3,17 @@ import numpy as np
 import pyrr
 
 class FaceHandler:
-    def __init__(self, points, face_color_uniform_location, camera):
+    def __init__(self, points, faceColorUniformLocation):
         self.points = points
-        self.face_color_uniform_location = face_color_uniform_location
-        self.camera = camera
+        self.faceColorUniformLocation = faceColorUniformLocation
         self.faces = {}
-        self.transformations = {}
 
     def update(self, face, faceinfo, matrix=pyrr.matrix44.create_identity(dtype=np.float32)):
-        faceclass = Face(faceinfo, self.points, self.face_color_uniform_location)
+        faceclass = Face(faceinfo, self.points, self.faceColorUniformLocation, matrix)
         self.faces.update({face: faceclass})
-        self.transformations.update({face: matrix})
 
-    def drawfaces(self, modelMatrixLocation):
-        for face in self.faces.keys():
-            model_transform = pyrr.matrix44.create_identity(dtype=np.float32)
-            if face in self.transformations.keys():
-                model_transform = self.transformations[face]
-            self.faces[face].draw(modelMatrixLocation, model_transform, self.camera.position)
-    
-    def updateModelMatrix(self, face, matrix):
-        self.transformations[face] = pyrr.matrix44.multiply(matrix, self.transformations[face])
+    def proximity(self, mousepos):
+        return "F1"
 
     def destroy(self):
         for face in self.faces.values():

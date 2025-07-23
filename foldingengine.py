@@ -28,7 +28,7 @@ class Fold:
             dtype=np.float32
         )
 
-        self.facehandler.updateModelMatrix(face, pyrr.matrix44.multiply(fromOrigin, pyrr.matrix44.multiply(rotationMatrix, toOrigin)))
+        self.facehandler.faces[face].updateModelMatrix(face, pyrr.matrix44.multiply(fromOrigin, pyrr.matrix44.multiply(rotationMatrix, toOrigin)))
 
 
     def foldGrab(self, point1, point2, face, mouseinfo, view_transform):
@@ -44,7 +44,7 @@ class Fold:
         )
 
         # Create transformation matrix using model and view matrices
-        model_transform = self.facehandler.transformations[face]
+        model_transform = self.facehandler.faces[face].model_transform
         transformMatrix = pyrr.matrix44.multiply(
             view_transform,
             model_transform
