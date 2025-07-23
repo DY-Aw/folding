@@ -20,7 +20,7 @@ class FaceHandler:
             model_transform = pyrr.matrix44.create_identity(dtype=np.float32)
             if face in self.transformations.keys():
                 model_transform = self.transformations[face]
-            self.faces[face].draw(modelMatrixLocation, model_transform, self.camera.facing)
+            self.faces[face].draw(modelMatrixLocation, model_transform, self.camera.position)
     
     def updateModelMatrix(self, face, matrix):
         self.transformations[face] = pyrr.matrix44.multiply(matrix, self.transformations[face])

@@ -8,9 +8,12 @@ class Face:
     def __init__(self, face_data, points, face_color_uniform_location):
         self.vertices = face_data['vertices']
         self.points = points
+        self.center = (0,0,0)
 
-        self.sunlight = pyrr.vector.normalize(pyrr.vector3.create(0.5, -0.7, -0.5))
-        self.basecolor = (1.0, 0.0, 0.0)
+        self.sunlight = pyrr.vector.normalize(pyrr.vector3.create(0.5, 0.7, -0.5))
+        self.frontcolor = (1.0, 0.0, 0.0)
+        self.backcolor = (1.0, 1.0, 1.0)
+        self.epsilon = 1e-2
 
         self.triangles = self.triangulate()
 
@@ -29,14 +32,45 @@ class Face:
 
         self.face_color_uniform_location = face_color_uniform_location
 
-    def colorcalculate(self, model_transform, facing):
-        vectorre = pyrr.matrix44.multiply(model_transform, pyrr.vector4.create(0, 1, 0, 0))
-        c1, c2, c3 = self.basecolor
-        normal = pyrr.vector.normalize(pyrr.vector3.create(vectorre[0], vectorre[1], vectorre[2]))
+    def colorcalculate(self, model_transform, position):
+        pointinquestion = pyrr.matrix44.multiply(
+            pyrr.matrix44.inverse(model_transform).T,
+            pyrr.Vector4(self.center+(1,))
+        )
+        pointinquestion = pyrr.vector3.create(
+            pointinquestion[0],
+            pointinquestion[1],
+            pointinquestion[2]
+        )
 
+        facing = pyrr.vector.normalize(pyrr.Vector3(pointinquestion - position))
+        facing = pyrr.vector3.create(-facing[0], facing[1], -facing[2])
+
+        facenormal = pyrr.matrix44.multiply(model_transform, pyrr.vector4.create(0, 1, 0, 0))
+        normal = pyrr.vector.normalize(pyrr.vector3.create(facenormal[0], facenormal[1], facenormal[2]))
         #color calculation
 
-        normal *= np.sign(normal.dot(self.sunlight))
+        dot_product = pyrr.vector.dot(normal, facing)
+        if dot_product < 0:
+            basecolor = self.frontcolor
+        else:
+            basecolor = self.backcolor
+            normal = -normal
+
+        c1, c2, c3 = basecolor
+        sun_dot = pyrr.vector.dot(normal, self.sunlight)
+        multiplier = (sun_dot / 2.5) + 0.7
+        self.color = [
+            multiplier * c1,
+            multiplier * c2,
+            multiplier * c3
+        ]
+
+
+        #self.color = basecolor
+
+
+        '''normal *= np.sign(normal.dot(self.sunlight))
         sun_dot = normal.dot(self.sunlight)
         normalfacing = np.sign(pyrr.Vector3(facing).dot(normal))
         sun_dot *= normalfacing
@@ -45,7 +79,7 @@ class Face:
             multiplier * c1,
             multiplier * c2,
             multiplier * c3
-        ]
+        ]'''
 
     def triangulate(self):
         triangles = []
@@ -56,8 +90,8 @@ class Face:
         return tuple(triangles)
     
 
-    def draw(self, modelMatrixLocation, model_transform, facing):
-        self.colorcalculate(model_transform, facing)
+    def draw(self, modelMatrixLocation, model_transform, position):
+        self.colorcalculate(model_transform, position)
         glUniform3fv(self.face_color_uniform_location, 1, self.color)
 
         # Define model matrix
@@ -65,6 +99,16 @@ class Face:
 
         glBindVertexArray(self.vao)
         glDrawArrays(GL_TRIANGLES, 0, self.vertex_count)
+
+    def centercalc(self):
+        x, y, z = 0, 0, 0
+        for vertex in self.vertices:
+            cx, cy, cz = self.points[vertex]
+            x += cx
+            y += cy
+            z += cz
+        
+        return (x, y, z)
 
     def destroy(self):
         glDeleteVertexArrays(1, (self.vao,))

@@ -25,8 +25,6 @@ class App:
 
         self.orbitsens = 0.01
         #-----------------------------
-
-
         
         glEnable(GL_DEPTH_TEST)
         glClearColor(0.1, 0.1, 0.1, 1.0)
@@ -88,7 +86,6 @@ class App:
                         self.orbit = False
                 elif event.type == pygame.MOUSEMOTION:
                     if self.grab:
-                        #self.foldengine.fold("E", "F", "F0", event.rel[0] * self.grabsens)
                         self.foldengine.foldGrab("E", "F", "F0", (pygame.mouse.get_pos(), event.rel, (self.sw, self.sh)), (self.camera.view_transform))
                     if self.orbit:
                         self.camera.orbit(event.rel[0] * self.orbitsens, -event.rel[1] * self.orbitsens)

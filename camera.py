@@ -41,7 +41,8 @@ class Camera:
         y = -self.zoom * yc
         z = -self.zoom * zc
 
-        eye = pyrr.vector3.create(x=x, y=y, z=z)
+        self.position = pyrr.vector3.create(x=x, y=y, z=z)
+        eye = self.position
         target = pyrr.vector3.create(x=0.0, y=0.0, z=0.0)
         up = pyrr.vector3.create(x=0.0, y=1.0, z=0.0)
 
