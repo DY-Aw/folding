@@ -4,9 +4,9 @@ import numpy as np
 import pyrr
 
 from filereader import *
-from facehandler import FaceHandler
 from foldingengine import Fold
 from renderer import Renderer
+from face import Face
 
 from camera import Camera
 
@@ -30,26 +30,27 @@ class App:
         glEnable(GL_DEPTH_TEST)
         glClearColor(0.1, 0.1, 0.1, 1.0)
         
+        # Initialize file data
         self.shader = shader_create("vertex.txt", "fragment.txt") 
         glUseProgram(self.shader)
-
-        self.camera = Camera(camera_create("camera.json"))
-
-        self.points = pl_create("points.json")
-        self.faces = faces_create("faces.json")
-
+        # Define matrix locations
         self.modelMatrixLocation = glGetUniformLocation(self.shader, "model")
         self.modelViewLocation = glGetUniformLocation(self.shader, "view")
         self.modelProjectionLocation = glGetUniformLocation(self.shader, "projection")
         self.faceColorUniformLocation = glGetUniformLocation(self.shader, "faceColor")
 
-        self.facehandler = FaceHandler(self.points, self.faceColorUniformLocation)
-        self.renderer = Renderer(self.points, self.facehandler, self.camera, self.faceColorUniformLocation, self.modelMatrixLocation)
+        self.camera = Camera(camera_create("camera.json"))
+        self.points = pl_create("points.json")
+        self.facesFromFile = faces_create("faces.json")
+        self.faces = {}
+        for face in self.facesFromFile.keys():
+            faceclass = Face(self.facesFromFile[face], self.points, self.faceColorUniformLocation)
+            self.faces.update({face: faceclass})
 
-        for face in self.faces.keys():
-            self.facehandler.update(face, self.faces[face])
+        self.renderer = Renderer(self.points, self.faces, self.camera, self.faceColorUniformLocation, self.modelMatrixLocation)
 
-        self.foldengine = Fold(self.facehandler, self.points)
+
+        self.foldengine = Fold(self.faces, self.points)
 
         # Use actual window aspect ratio
         aspect_ratio = (self.sw - 50) / (self.sh - 50)
@@ -90,7 +91,7 @@ class App:
                 # Mouse
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:
-                        selected = self.facehandler.proximity(pygame.mouse.get_pos())
+                        selected = "F1"
                         if selected != None:
                             self.grab = True
                     if event.button == 2:
@@ -119,8 +120,7 @@ class App:
             glUseProgram(self.shader)
             glEnable(GL_POLYGON_OFFSET_FILL)
             glPolygonOffset(1.0, 1.0)
-            #self.facehandler.drawfaces(self.modelMatrixLocation)
-            for face in self.facehandler.faces.keys():
+            for face in self.faces.keys():
                 self.renderer.drawFace(face)
             glDisable(GL_POLYGON_OFFSET_FILL)
             if self.grab:
@@ -134,7 +134,8 @@ class App:
         self.quit()
 
     def quit(self):
-        self.facehandler.destroy()
+        for face in self.faces.values():
+            face.destroy()
         glDeleteProgram(self.shader)
         pygame.quit()
 

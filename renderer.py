@@ -2,9 +2,9 @@ import numpy as np
 from OpenGL.GL import *
 
 class Renderer:
-    def __init__(self, points, facehandler, camera, faceColorUniformLocation, modelMatrixLocation):
+    def __init__(self, points, faces, camera, faceColorUniformLocation, modelMatrixLocation):
         self.points = points
-        self.facehandler = facehandler
+        self.faces = faces
         self.camera = camera
         self.faceColorUniformLocation = faceColorUniformLocation
         self.modelMatrixLocation = modelMatrixLocation
@@ -18,13 +18,13 @@ class Renderer:
 
         glUniform3fv(self.faceColorUniformLocation, 1, color)
 
-        glUniformMatrix4fv(self.modelMatrixLocation, 1, GL_FALSE, self.facehandler.faces[face].model_transform)
+        glUniformMatrix4fv(self.modelMatrixLocation, 1, GL_FALSE, self.faces[face].model_transform)
 
         glDrawArrays(GL_LINES, 0, len(vertexIDs))
     
     def drawOutline(self, face, color, width=1.0):
         glLineWidth(width)
-        vertexIDs = self.facehandler.faces[face].vertices
+        vertexIDs = self.faces[face].vertices
         vertices = []
         for vertex in vertexIDs:
             vertices.extend(self.points[vertex])
@@ -32,12 +32,12 @@ class Renderer:
 
         glUniform3fv(self.faceColorUniformLocation, 1, color)
 
-        glUniformMatrix4fv(self.modelMatrixLocation, 1, GL_FALSE, self.facehandler.faces[face].model_transform)
+        glUniformMatrix4fv(self.modelMatrixLocation, 1, GL_FALSE, self.faces[face].model_transform)
 
         glDrawArrays(GL_LINE_LOOP, 0, len(vertexIDs))
 
     def drawFace(self, faceID):
-        face = self.facehandler.faces[faceID]
+        face = self.faces[faceID]
         vertices = face.triangles
         self.gpuData(vertices)
 

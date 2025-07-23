@@ -1,11 +1,8 @@
 import json
 import os
-import sys
 
 from OpenGL.GL import *
 from OpenGL.GL.shaders import compileProgram, compileShader
-
-from face import Face
 
 def get_resource_path(file):
     return os.path.join(os.path.dirname(__file__), "data/"+file)

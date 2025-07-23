@@ -3,12 +3,11 @@ import math
 import pyrr
 
 class Fold:
-    def __init__(self, facehandler, points):
-        self.facehandler = facehandler
+    def __init__(self, faces, points):
+        self.faces = faces
         self.points = points
 
     def fold(self, point1, point2, face, angle):
-
         p1x, p1y, p1z = self.points[point1]
         p2x, p2y, p2z = self.points[point2]
 
@@ -28,8 +27,7 @@ class Fold:
             dtype=np.float32
         )
 
-        self.facehandler.faces[face].updateModelMatrix(face, pyrr.matrix44.multiply(fromOrigin, pyrr.matrix44.multiply(rotationMatrix, toOrigin)))
-
+        self.faces[face].updateModelMatrix(face, pyrr.matrix44.multiply(fromOrigin, pyrr.matrix44.multiply(rotationMatrix, toOrigin)))
 
     def foldGrab(self, point1, point2, face, mouseinfo, view_transform):
         # Transform mouse data from pygame screen coordinates to OpenGl screen coordinates
@@ -44,7 +42,7 @@ class Fold:
         )
 
         # Create transformation matrix using model and view matrices
-        model_transform = self.facehandler.faces[face].model_transform
+        model_transform = self.faces[face].model_transform
         transformMatrix = pyrr.matrix44.multiply(
             view_transform,
             model_transform
