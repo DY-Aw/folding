@@ -75,7 +75,7 @@ class Face:
             triangles.extend(self.points[self.vertices[i+1]])
         return tuple(triangles)
     
-    def updateModelMatrix(self, face, matrix):
+    def updateModelMatrix(self, matrix):
         self.model_transform = pyrr.matrix44.multiply(matrix, self.model_transform)
 
     def destroy(self):

@@ -9,6 +9,7 @@ from renderer import Renderer
 from face import Face
 
 from camera import Camera
+from eventhandler import EventHandler
 
 
 class App:
@@ -23,8 +24,6 @@ class App:
         #Constants ----------------
         self.orbit = False
         self.grab = False
-
-        self.orbitsens = 0.01
         #-----------------------------
         
         glEnable(GL_DEPTH_TEST)
@@ -48,9 +47,8 @@ class App:
             self.faces.update({face: faceclass})
 
         self.renderer = Renderer(self.points, self.faces, self.camera, self.faceColorUniformLocation, self.modelMatrixLocation)
-
-
         self.foldengine = Fold(self.faces, self.points)
+        self.eventhandler = EventHandler((self.sw, self.sh), self.renderer, self.foldengine)
 
         # Use actual window aspect ratio
         aspect_ratio = (self.sw - 50) / (self.sh - 50)
@@ -88,29 +86,31 @@ class App:
                         1, GL_FALSE, self.projection_transform
                     )
 
-                # Mouse
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:
-                        selected = "F1"
-                        if selected != None:
-                            self.grab = True
-                    if event.button == 2:
-                        self.orbit = True
-                elif event.type == pygame.MOUSEBUTTONUP:
-                    if event.button == 1:
-                        self.grab = False
-                    if event.button == 2:
-                        self.orbit = False
-                elif event.type == pygame.MOUSEMOTION:
-                    if self.orbit:
-                        self.camera.orbit(event.rel[0] * self.orbitsens, -event.rel[1] * self.orbitsens)
-                    elif self.grab:
-                        self.foldengine.foldGrab("E", "F", selected, (pygame.mouse.get_pos(), event.rel, (self.sw, self.sh)), (self.camera.view_transform))
+                # Interactions
+                else:
+                    '''if event.type == pygame.MOUSEBUTTONDOWN:
+                        if event.button == 1:
+                            selected = "F1"
+                            if selected != None:
+                                self.grab = True
+                        if event.button == 2:
+                            self.orbit = True
+                    elif event.type == pygame.MOUSEBUTTONUP:
+                        if event.button == 1:
+                            self.grab = False
+                        if event.button == 2:
+                            self.orbit = False
+                    elif event.type == pygame.MOUSEMOTION:
+                        if self.orbit:
+                            self.camera.orbit(event.rel[0] * self.orbitsens, -event.rel[1] * self.orbitsens)
+                        elif self.grab:
+                            self.foldengine.foldGrab("E", "F", selected, (pygame.mouse.get_pos(), event.rel, (self.sw, self.sh)), (self.camera.view_transform))
                 
-                # Scroll zoom
-                elif event.type == pygame.MOUSEWHEEL:
-                    scrollsens = 0.1
-                    self.camera._zoom(-event.y * scrollsens)
+                    # Scroll zoom
+                    elif event.type == pygame.MOUSEWHEEL:
+                        scrollsens = 0.1
+                        self.camera._zoom(-event.y * scrollsens)'''
+                    self.eventhandler.initializeEvents(event)
 
             self.camera.calculateViewMatrix(self.modelViewLocation)
 
@@ -123,11 +123,12 @@ class App:
             for face in self.faces.keys():
                 self.renderer.drawFace(face)
             glDisable(GL_POLYGON_OFFSET_FILL)
-            if self.grab:
-                #self.renderer.drawLine(["A", "B"], (1, 1, 0), selected, 3)
-                self.renderer.drawOutline(selected, (1, 1, 0), 3.0)
-            #self.renderer.drawLine(["E", "F"], (0, 0, 1), "F0", 4)
-            
+            if self.eventhandler.grab:
+                if self.eventhandler.selected is not None:
+                    self.renderer.drawOutline(self.eventhandler.selected, (1, 1, 0), 3.0)
+            if self.eventhandler.modes["vertexEdit"]:
+                self.renderer.drawPoint("A", (0, 1, 0), "F0", 10.0)
+
             pygame.display.flip()
             self.clock.tick(60)
         

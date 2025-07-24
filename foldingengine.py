@@ -27,7 +27,7 @@ class Fold:
             dtype=np.float32
         )
 
-        self.faces[face].updateModelMatrix(face, pyrr.matrix44.multiply(fromOrigin, pyrr.matrix44.multiply(rotationMatrix, toOrigin)))
+        self.faces[face].updateModelMatrix(pyrr.matrix44.multiply(fromOrigin, pyrr.matrix44.multiply(rotationMatrix, toOrigin)))
 
     def foldGrab(self, point1, point2, face, mouseinfo, view_transform):
         # Transform mouse data from pygame screen coordinates to OpenGl screen coordinates

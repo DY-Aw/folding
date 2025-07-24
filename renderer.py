@@ -9,6 +9,17 @@ class Renderer:
         self.faceColorUniformLocation = faceColorUniformLocation
         self.modelMatrixLocation = modelMatrixLocation
 
+    def drawPoint(self, vertexID, color, face, size=1.0):
+        glEnable(GL_POINT_SMOOTH)
+        glPointSize(size)
+        self.gpuData(self.points[vertexID])
+
+        glUniform3fv(self.faceColorUniformLocation, 1, color)
+
+        glUniformMatrix4fv(self.modelMatrixLocation, 1, GL_FALSE, self.faces[face].model_transform)
+
+        glDrawArrays(GL_POINTS, 0, 1)
+
     def drawLine(self, vertexIDs, color, face, width=1.0):
         glLineWidth(width)
         vertices = []
@@ -59,10 +70,4 @@ class Renderer:
         # Position attribute
         glEnableVertexAttribArray(0)
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 12, ctypes.c_void_p(0))
-
-    def gpuData2(self, vertices):
-        vertexCoords = []
-        for vertex in vertices:
-            vertexCoords.extend(self.points[vertex])
-        self.gpuData(vertexCoords)
 

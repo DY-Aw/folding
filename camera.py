@@ -6,8 +6,8 @@ from OpenGL.GL import *
 class Camera:
     def __init__(self, data):
         yaw, pitch, zoom = data
-        self.yaw = math.radians(yaw)
-        self.pitch = math.radians(pitch)
+        self.yaw = yaw
+        self.pitch = pitch
         self.zoom = zoom
 
     def getFacing(self):
