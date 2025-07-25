@@ -1,3 +1,4 @@
+import numpy as np
 import math
 import pyrr
 
@@ -14,8 +15,7 @@ class Camera:
         y = math.sin(self.pitch)
         x = math.cos(self.yaw) * math.cos(self.pitch)
         z = math.sin(self.yaw) * math.cos(self.pitch)
-        self.facing = (x, y, z)
-        
+        self.facing = (x, y, z)        
 
     def orbit(self, yaw, pitch):
         self.yaw += yaw
@@ -46,5 +46,5 @@ class Camera:
         target = pyrr.vector3.create(x=0.0, y=0.0, z=0.0)
         up = pyrr.vector3.create(x=0.0, y=1.0, z=0.0)
 
-        self.view_transform = pyrr.matrix44.create_look_at(eye, target, up, dtype=None)
+        self.view_transform = pyrr.matrix44.create_look_at(eye, target, up, dtype=np.float32)
         glUniformMatrix4fv(modelViewLocation, 1, GL_FALSE, self.view_transform)
