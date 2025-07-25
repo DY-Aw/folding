@@ -35,8 +35,9 @@ class Face:
 
     def colorcalculate(self, position):
         pointinquestion = pyrr.matrix44.multiply(
-            pyrr.matrix44.inverse(self.model_transform).T,
-            pyrr.Vector4(self.center+(1,))
+            pyrr.Vector4(np.append(self.points[self.vertices[0]], 1.0)),
+            pyrr.matrix44.inverse(self.model_transform).T
+
         )
         pointinquestion = pyrr.vector3.create(
             pointinquestion[0],
@@ -45,9 +46,9 @@ class Face:
         )
 
         facing = pyrr.vector.normalize(pyrr.Vector3(pointinquestion - position))
-        facing = pyrr.vector3.create(-facing[0], facing[1], -facing[2])
+        facing = pyrr.vector3.create(facing[0], facing[1], facing[2])
 
-        facenormal = pyrr.matrix44.multiply(self.model_transform, pyrr.vector4.create(0, 1, 0, 0))
+        facenormal = pyrr.matrix44.multiply(pyrr.vector4.create(0, 1, 0, 0), self.model_transform)
         normal = pyrr.vector.normalize(pyrr.vector3.create(facenormal[0], facenormal[1], facenormal[2]))
         
         #color calculation
@@ -76,7 +77,7 @@ class Face:
         return tuple(triangles)
     
     def updateModelMatrix(self, matrix):
-        self.model_transform = pyrr.matrix44.multiply(matrix, self.model_transform)
+        self.model_transform = pyrr.matrix44.multiply(self.model_transform, matrix)
 
     def destroy(self):
         glDeleteVertexArrays(1, (self.tvao,))
