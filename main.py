@@ -16,9 +16,10 @@ class App:
     def __init__(self):
         pygame.init()
         infoObject = pygame.display.Info()
-        self.sw = infoObject.current_w
-        self.sh = infoObject.current_h
-        self.screen = pygame.display.set_mode((self.sw - 50, self.sh - 50), pygame.DOUBLEBUF | pygame.OPENGL | pygame.RESIZABLE)
+        self.screenwidth = infoObject.current_w-50
+        self.screenheight = infoObject.current_h-50
+        self.screen = pygame.display.set_mode((self.screenwidth, self.screenheight), pygame.DOUBLEBUF | pygame.OPENGL | pygame.RESIZABLE)
+        self.sw, self.sh = pygame.display.get_surface().get_size()
         self.clock = pygame.time.Clock()
 
         #Constants ----------------
@@ -39,7 +40,7 @@ class App:
         self.faceColorUniformLocation = glGetUniformLocation(self.shader, "faceColor")
         
         # Use actual window aspect ratio
-        aspect_ratio = (self.sw - 50) / (self.sh - 50)
+        aspect_ratio = self.sw / self.sh
         self.projection_transform = pyrr.matrix44.create_perspective_projection(
             fovy = 45, aspect = aspect_ratio,
             near = 0.1, far = 10, dtype=np.float32
@@ -73,10 +74,9 @@ class App:
                     running = False
                 elif (event.type == pygame.VIDEORESIZE):
                     # Handle window resize
-                    self.sw = event.w
-                    self.sh = event.h
-                    glViewport(0, 0, event.w, event.h)
-                    aspect_ratio = (self.sw - 50) / (self.sh - 50)
+                    self.sw, self.sh = pygame.display.get_surface().get_size()
+                    glViewport(0, 0, self.sw, self.sh)
+                    aspect_ratio = self.sw / self.sh
                     self.projection_transform = pyrr.matrix44.create_perspective_projection(
                         fovy = 45, aspect = aspect_ratio,
                         near = 0.1, far = 10, dtype=np.float32

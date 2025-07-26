@@ -2,6 +2,7 @@ import pygame
 import pyrr
 import math
 import numpy as np
+from randomoperations import *
 
 class EventHandler:
     def __init__(self, screeninfo, renderer, foldengine, projection_transform):
@@ -73,22 +74,23 @@ class EventHandler:
                 face = self.faces[faceID]
                 model_transform = face.model_transform
                 screenCoordinateTransformer = pyrr.matrix44.multiply(
-                    self.projection_transform,
                     pyrr.matrix44.multiply(
-                        self.camera.view_transform,
-                        model_transform
-                    )
+                        model_transform,
+                        self.camera.view_transform
+                    ),
+                    self.projection_transform
                 )
                 for vertex in face.vertices:
                     if vertex not in points.keys():
-                        transformedpoint = pyrr.matrix44.multiply(
+                        transformedpoint = pyrr.matrix44.apply_to_vector(
                             screenCoordinateTransformer,
-                            pyrr.Vector4(self.points[vertex]+(1,))
+                            pyrr.Vector4(np.append(self.points[vertex], 1.0))
                         )
-                        #transformedpoint = transformedpoint / transformedpoint[3]
-                        points.update({vertex: self.convertToPygameCoordinates(
+                        transformedpoint = transformedpoint / transformedpoint[3]
+                        points.update({vertex: convertToPygameCoordinates(
                             transformedpoint[0],
-                            transformedpoint[1]
+                            transformedpoint[1],
+                            self.sw, self.sh
                         )})
                 for vID in range(len(face.vertices)):
                     lineID = tuple(set({face.vertices[vID-1], face.vertices[vID]}))
@@ -112,7 +114,7 @@ class EventHandler:
 
                 if m_x < 0 or m_x > upperbound:
                     continue
-                if abs(m_y) > 5:
+                if abs(m_y) > 10:
                     continue
                 if closestLine == None:
                     closestLine = (line, face, m_y)
@@ -120,20 +122,3 @@ class EventHandler:
                     closestLine = (line, face, m_y)
             if closestLine != None:
                 self.renderer.drawLine(tuple(closestLine[0]), (1, 1, 0), closestLine[1], 3.0)
-            #print(points["A"], points["B"], mouseX, mouseY)
-            print(self.convertToOpenGLCoordinates(mouseX, mouseY))
-            print(self.sw, self.sh)
-
-
-
-
-    def convertToOpenGLCoordinates(self, x, y):
-        fx = 2*x / self.sw - 1
-        fy = 2*y / self.sh - 1
-        return fx, -fy
-    
-    def convertToPygameCoordinates(self, x, y):
-        fx = (x+1) * self.sw / 2
-        fy = (-y+1) * self.sh / 2
-        return fx, fy
-    
