@@ -16,3 +16,5 @@ Hotkeys:
 Q: Select edges
 V: Select a point along a selected edge
 X: Make a crease between two selected points
+W: Select a face
+F: Fold selected face

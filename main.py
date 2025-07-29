@@ -99,6 +99,7 @@ class App:
             for face in self.faces.keys():
                 self.renderer.drawFace(face)
             self.eventhandler.lineSelect()
+            self.eventhandler.faceSelect()
             self.eventhandler.drawSelected()
             self.eventhandler.vertexEdit()
             self.eventhandler.folding()
