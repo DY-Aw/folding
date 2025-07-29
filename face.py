@@ -8,7 +8,6 @@ class Face:
     def __init__(self, face_data, points, faceColorUniformLocation, matrix=pyrr.matrix44.create_identity()):
         self.vertices = face_data['vertices']
         self.points = points
-        self.center = (0,0,0)
 
         self.sunlight = pyrr.vector.normalize(pyrr.vector3.create(0.5, 0.7, -0.5))
         self.frontcolor = (1.0, 0.0, 0.0)

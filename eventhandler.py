@@ -1,7 +1,4 @@
 import pygame
-import pyrr
-import math
-import numpy as np
 from randomoperations import *
 
 class EventHandler:
@@ -16,19 +13,37 @@ class EventHandler:
 
         self.grab = False
         self.orbit = False
-        self.selected = None
+        self.selecteditems = {'faces': set(()), 'lines': {}, 'points': {}}
         self.orbitsens = 0.01
+        self.hoveredLine = None
+        self.hoveredPoint = None
+        self.newvertices = []
         
         self.modes = {
-            "vertexEdit": False
+            "vertexEdit": False,
+            "lineSelect": False
         }
+        self.previousMode = None
 
     def initializeEvents(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                selected = "F1"
-                if selected != None:
+                #if len(self.selecteditems['faces']) > 0:
+                if len(self.faces.keys())>1:
                     self.grab = True
+                if self.hoveredLine != None:
+                    if self.hoveredLine[0] not in self.selecteditems['lines'].keys():
+                        self.selecteditems['lines'] = {}
+                        self.selecteditems['lines'].update({self.hoveredLine[0]: self.hoveredLine[1]})
+                    else:
+                        del self.selecteditems['lines'][self.hoveredLine[0]]
+                    self.hoveredLine = None
+                if self.hoveredPoint != None:
+                    self.selecteditems['points'].update({self.hoveredPoint[0]: self.hoveredPoint[1]})
+                    self.selecteditems['lines'] = {}
+                    self.newvertices.append(self.hoveredPoint)
+                    self.hoveredPoint = None
+
             if event.button == 2:
                 self.orbit = True
         elif event.type == pygame.MOUSEBUTTONUP:
@@ -40,8 +55,9 @@ class EventHandler:
             if self.orbit:
                 self.camera.orbit(event.rel[0] * self.orbitsens, -event.rel[1] * self.orbitsens)
             elif self.grab:
-                self.selected = "F0"
-                self.foldengine.foldGrab("E", "F", self.selected, (pygame.mouse.get_pos(), event.rel, (self.sw, self.sh)), (self.camera.view_transform))
+                selected = "F0"
+                self.selecteditems['faces'].add(selected)
+                self.foldengine.foldGrab("E", "F", selected, (pygame.mouse.get_pos(), event.rel, (self.sw, self.sh)), (self.camera.view_transform))
     
         # Scroll zoom
         elif event.type == pygame.MOUSEWHEEL:
@@ -53,44 +69,48 @@ class EventHandler:
             if event.key == pygame.K_ESCAPE:
                 for mode in self.modes.keys():
                     self.modes[mode] = False
+                if self.previousMode != None:
+                    self.modes[self.previousMode] = True
             if event.key == pygame.K_v:
                 self.swapMode("vertexEdit")
+                print("s", self.modes)
+            if event.key == pygame.K_q:
+                self.swapMode("lineSelect", True)
+                print("q", self.modes)
+            if event.key == pygame.K_x:
+                self.splitVertices()
     
-    def swapMode(self, mode):
+    def swapMode(self, mode, saveprevious = False):
         # Exits every mode and swaps to/from the desired mode
         enabled = self.modes[mode]
-        for mode in self.modes.keys():
-            self.modes[mode] = False
+        for _mode in self.modes.keys():
+            if self.modes[_mode] == True:
+                self.previousMode = _mode
+            self.modes[_mode] = False
         if not enabled:
             self.modes[mode] = True
+        if not saveprevious:
+            self.previousMode = None
 
-    def vertexEdit(self):
-        if self.modes["vertexEdit"]:
-            mouseX, mouseY = pygame.mouse.get_pos()
+    def lineSelect(self):
+        if self.modes["lineSelect"]:
             closestLine = None
             points = {}
             lines = {}
             for faceID, face in self.faces.items():
                 face = self.faces[faceID]
                 model_transform = face.model_transform
-                screenCoordinateTransformer = pyrr.matrix44.multiply(
-                    pyrr.matrix44.multiply(
-                        model_transform,
-                        self.camera.view_transform
-                    ),
-                    self.projection_transform
-                )
                 for vertex in face.vertices:
                     if vertex not in points.keys():
-                        transformedpoint = pyrr.matrix44.apply_to_vector(
-                            screenCoordinateTransformer,
-                            pyrr.Vector4(np.append(self.points[vertex], 1.0))
+                        transformedpoint = getScreenCoordinates(
+                            self.points[vertex],
+                            model_transform,
+                            self.camera.view_transform,
+                            self.projection_transform
                         )
-                        transformedpoint = transformedpoint / transformedpoint[3]
                         points.update({vertex: convertToPygameCoordinates(
-                            transformedpoint[0],
-                            transformedpoint[1],
-                            self.sw, self.sh
+                            (transformedpoint[0], transformedpoint[1]),
+                            (self.sw, self.sh)
                         )})
                 for vID in range(len(face.vertices)):
                     lineID = tuple(set({face.vertices[vID-1], face.vertices[vID]}))
@@ -98,21 +118,8 @@ class EventHandler:
                         lines.update({lineID: faceID})
             for line, face in lines.items():
                 a, b = line
-                ax, ay = points[a]
-                bx, by = points[b]
-
-                bx -= ax
-                by -= ay
-                mx = mouseX - ax
-                my = mouseY - ay
-                
-                theta = -math.atan2(by, bx)
-                upperbound = bx * math.cos(theta) - by * math.sin(theta)
-
-                m_x = mx * math.cos(theta) - my * math.sin(theta)
-                m_y = mx * math.sin(theta) + my * math.cos(theta)
-
-                if m_x < 0 or m_x > upperbound:
+                rightbound, m_x, m_y = mouseToLine(points[a], points[b], pygame.mouse.get_pos())
+                if m_x < 0 or m_x > rightbound:
                     continue
                 if abs(m_y) > 10:
                     continue
@@ -120,5 +127,59 @@ class EventHandler:
                     closestLine = (line, face, m_y)
                 elif m_y < closestLine[2]:
                     closestLine = (line, face, m_y)
+
             if closestLine != None:
                 self.renderer.drawLine(tuple(closestLine[0]), (1, 1, 0), closestLine[1], 3.0)
+                self.hoveredLine = (closestLine[0], closestLine[1])
+
+    def vertexEdit(self):
+        if self.modes['vertexEdit']:
+            if self.selecteditems['lines'] != {}:
+                for asd in self.selecteditems['lines'].keys():
+                    line = asd
+                face = self.selecteditems['lines'][line]
+                model = self.faces[face].model_transform
+                view = self.camera.view_transform
+                projection = self.projection_transform
+                p1, p2 = self.points[line[0]], self.points[line[1]]
+                point1 = convertToPygameCoordinates(
+                    getScreenCoordinates(p1, model, view, projection),
+                    (self.sw, self.sh)
+                )
+                point2 = convertToPygameCoordinates(
+                    getScreenCoordinates(p2, model, view, projection),
+                    (self.sw, self.sh)
+                )
+                b, m_x, m_y = mouseToLine(point1, point2, pygame.mouse.get_pos())
+                if m_x > 0 and m_x < b:
+                    ratio = m_x/b
+                elif m_x <= 0:
+                    ratio = 0
+                elif m_x >= b:
+                    ratio = 1
+                tempPoint = []
+                for i in range(3):
+                    tempPoint.append(p1[i] + ratio * (p2[i] - p1[i]))
+                tempPoint = tuple(tempPoint)
+                self.renderer.drawPoint(tempPoint, (0, 0, 0), face, 10.0)
+                self.hoveredPoint = (tempPoint, face, list(line))
+    
+    def splitVertices(self):
+        if len(self.newvertices) == 2:
+            self.foldengine.split(
+                self.newvertices[0][0],
+                self.newvertices[1][0],
+                self.newvertices[0][2],
+                self.newvertices[1][2],
+                self.newvertices[0][1]
+            )
+        self.newvertices = []
+        self.selecteditems['points'] = {}
+
+    def drawSelected(self):
+        for face in self.selecteditems['faces']:
+            self.renderer.drawOutline(face, (1, 1, 0), 3.0)
+        for line, face in self.selecteditems['lines'].items():
+            self.renderer.drawLine(line, (1, 1, 0), face, 3.0)
+        for point, face in self.selecteditems['points'].items():
+            self.renderer.drawPoint(point, (1, 1.0, 0), face, 10.0)

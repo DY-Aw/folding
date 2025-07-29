@@ -2,6 +2,7 @@ import numpy as np
 import math
 import pyrr
 from randomoperations import *
+from face import Face
 
 class Fold:
     def __init__(self, faces, points, projection_transform):
@@ -38,8 +39,8 @@ class Fold:
             finalMousePos[0] - mouseDisplacement[0],
             finalMousePos[1] - mouseDisplacement[1]
         )
-        finalMousePos = convertToOpenGLCoordinates(finalMousePos[0], finalMousePos[1], screenInfo[0], screenInfo[1])
-        initialMousePos = convertToOpenGLCoordinates(initialMousePos[0], initialMousePos[1], screenInfo[0], screenInfo[1])
+        finalMousePos = convertToOpenGLCoordinates(finalMousePos, screenInfo)
+        initialMousePos = convertToOpenGLCoordinates(initialMousePos, screenInfo)
         # Create transformation matrix using model and view matrices
         model_transform = self.faces[face].model_transform
         transformMatrix = pyrr.matrix44.multiply(
@@ -89,5 +90,46 @@ class Fold:
         self.fold(point1, point2, face, theta)
 
         
-    def split(point1, point2, face):
-        pass
+    def split(self, point1, point2, line1, line2, face):
+        oldface = self.faces[face]
+        pointIDs = list(self.points.keys())
+        pointIDs.sort(key=AlphaID)
+        p1ID = nextLetterInSequence(pointIDs[-1], True)
+        p2ID = nextLetterInSequence(p1ID, True)
+        self.points.update({p1ID: point1})
+        self.points.update({p2ID: point2})
+
+        vertex = line1[0]
+        startIndex = oldface.vertices.index(vertex)
+        list_length = len(oldface.vertices)
+        if oldface.vertices[(startIndex+1)%list_length] == line1[1]:
+            vertex = line1[1]
+            startIndex = (startIndex+1)%list_length
+        firstFaceVertices = [p2ID, p1ID, vertex]
+        secondFaceVertices = [p1ID, p2ID]
+        index = startIndex
+        while oldface.vertices[index] not in line2:
+            index = (index+1)%list_length
+            firstFaceVertices.append(oldface.vertices[index])
+        index = (index+1)%list_length
+        while index != startIndex:
+            secondFaceVertices.append(oldface.vertices[index])
+            index = (index+1)%list_length
+        
+        face_data1 = {
+            'vertices': firstFaceVertices
+        }
+        face_data2 = {
+            'vertices': secondFaceVertices
+        }
+        model_transform = oldface.model_transform
+        faceColorUniformLocation = oldface.faceColorUniformLocation
+
+        self.faces[face] = Face(face_data1, self.points, faceColorUniformLocation, model_transform)
+
+        faceIDs = list(self.faces.keys())
+        faceIDs.sort(key=FaceID)
+        self.faces.update({nextFaceInSequence(faceIDs[-1]): Face(face_data2, self.points, faceColorUniformLocation, model_transform)})
+
+        
+        

@@ -28,7 +28,7 @@ class App:
         #-----------------------------
         
         glEnable(GL_DEPTH_TEST)
-        glClearColor(0.1, 0.1, 0.1, 1.0)
+        glClearColor(0.3, 0.3, 0.3, 1.0)
         
         # Initialize file data
         self.shader = shader_create("vertex.txt", "fragment.txt") 
@@ -96,16 +96,12 @@ class App:
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
             glUseProgram(self.shader)
-            glEnable(GL_POLYGON_OFFSET_FILL)
-            glPolygonOffset(1.0, 1.0)
             for face in self.faces.keys():
                 self.renderer.drawFace(face)
-            glDisable(GL_POLYGON_OFFSET_FILL)
-            if self.eventhandler.grab:
-                if self.eventhandler.selected is not None:
-                    self.renderer.drawOutline(self.eventhandler.selected, (1, 1, 0), 3.0)
             if self.eventhandler.modes["vertexEdit"]:
                 self.renderer.drawPoint("A", (0, 1, 0), "F0", 10.0)
+            self.eventhandler.lineSelect()
+            self.eventhandler.drawSelected()
             self.eventhandler.vertexEdit()
 
             pygame.display.flip()

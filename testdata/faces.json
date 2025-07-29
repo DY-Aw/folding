@@ -1,0 +1,14 @@
+{
+    "faces": {
+        "F0": {
+            "vertices": ["A", "E", "F", "B"],
+            "connections": {
+            }
+        },
+        "F1": {
+            "vertices": ["C", "E", "F", "D"],
+            "connections": {
+            }
+        }
+    }
+}
