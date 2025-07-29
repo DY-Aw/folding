@@ -98,11 +98,10 @@ class App:
             glUseProgram(self.shader)
             for face in self.faces.keys():
                 self.renderer.drawFace(face)
-            if self.eventhandler.modes["vertexEdit"]:
-                self.renderer.drawPoint("A", (0, 1, 0), "F0", 10.0)
             self.eventhandler.lineSelect()
             self.eventhandler.drawSelected()
             self.eventhandler.vertexEdit()
+            self.eventhandler.folding()
 
             pygame.display.flip()
             self.clock.tick(60)

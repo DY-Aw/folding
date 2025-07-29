@@ -13,15 +13,17 @@ class EventHandler:
 
         self.grab = False
         self.orbit = False
-        self.selecteditems = {'faces': set(()), 'lines': {}, 'points': {}}
+        self.selecteditems = {'faces': [], 'lines': {}, 'points': {}}
         self.orbitsens = 0.01
         self.hoveredLine = None
         self.hoveredPoint = None
+        self.hoveredFace = None
         self.newvertices = []
         
         self.modes = {
             "vertexEdit": False,
-            "lineSelect": False
+            "lineSelect": False,
+            "folding": False
         }
         self.previousMode = None
 
@@ -29,8 +31,8 @@ class EventHandler:
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
                 #if len(self.selecteditems['faces']) > 0:
-                if len(self.faces.keys())>1:
-                    self.grab = True
+                #if len(self.faces.keys())>1:
+                    #self.grab = True
                 if self.hoveredLine != None:
                     if self.hoveredLine[0] not in self.selecteditems['lines'].keys():
                         self.selecteditems['lines'] = {}
@@ -43,6 +45,8 @@ class EventHandler:
                     self.selecteditems['lines'] = {}
                     self.newvertices.append(self.hoveredPoint)
                     self.hoveredPoint = None
+                if self.hoveredFace != None:
+                    self.selecteditems['faces'] = [self.hoveredFace]
 
             if event.button == 2:
                 self.orbit = True
@@ -55,9 +59,8 @@ class EventHandler:
             if self.orbit:
                 self.camera.orbit(event.rel[0] * self.orbitsens, -event.rel[1] * self.orbitsens)
             elif self.grab:
-                selected = "F0"
-                self.selecteditems['faces'].add(selected)
-                self.foldengine.foldGrab("E", "F", selected, (pygame.mouse.get_pos(), event.rel, (self.sw, self.sh)), (self.camera.view_transform))
+                p1, p2, grabbedface = self.grabbed
+                self.foldengine.foldGrab(p1, p2, grabbedface, (pygame.mouse.get_pos(), event.rel, (self.sw, self.sh)), (self.camera.view_transform))
     
         # Scroll zoom
         elif event.type == pygame.MOUSEWHEEL:
@@ -79,6 +82,8 @@ class EventHandler:
                 print("q", self.modes)
             if event.key == pygame.K_x:
                 self.splitVertices()
+            if event.key == pygame.K_f:
+                self.swapMode("folding")
     
     def swapMode(self, mode, saveprevious = False):
         # Exits every mode and swaps to/from the desired mode
@@ -163,6 +168,8 @@ class EventHandler:
                 tempPoint = tuple(tempPoint)
                 self.renderer.drawPoint(tempPoint, (0, 0, 0), face, 10.0)
                 self.hoveredPoint = (tempPoint, face, list(line))
+        else:
+            self.hoveredPoint = None
     
     def splitVertices(self):
         if len(self.newvertices) == 2:
@@ -176,6 +183,58 @@ class EventHandler:
                 )
         self.newvertices = []
         self.selecteditems['points'] = {}
+    
+    def folding(self):
+        if self.modes['folding']:
+            if self.selecteditems['faces']:
+                lineslist = list(self.selecteditems['lines'].keys())
+                if len(lineslist) == 1:
+                    p1, p2 = lineslist[0]
+                    grabbedface = self.selecteditems['faces'][0]
+                    self.grabbed = (p1, p2, grabbedface)
+                    self.grab = True
+                else:
+                    self.grab = False
+            else:
+                self.grab = False
+                rayOrigin, rayDirection = mouseToRay((self.sw, self.sh), self.projection_transform, self.camera.view_transform)
+                min_t = None
+                for id, face in self.faces.items():
+                    face_t = None
+                    model = face.model_transform
+                    for i in range(len(list(face.triangles))//9):
+                        j = 9 * i
+                        vert1 = pyrr.vector4.create(face.triangles[j], face.triangles[j+1], face.triangles[j+2], 1.0)
+                        vert2 = pyrr.vector4.create(face.triangles[j+3], face.triangles[j+4], face.triangles[j+5], 1.0)
+                        vert3 = pyrr.vector4.create(face.triangles[j+6], face.triangles[j+7], face.triangles[j+8], 1.0)
+
+                        v1 = pyrr.matrix44.apply_to_vector(model, vert1)
+                        v2 = pyrr.matrix44.apply_to_vector(model, vert2)
+                        v3 = pyrr.matrix44.apply_to_vector(model, vert3)
+                        v1 = v1 / v1[3]
+                        v2 = v2 / v2[3]
+                        v3 = v3 / v3[3]
+
+                        intersect = triangleIntersect(
+                            rayOrigin, rayDirection,
+                            pyrr.vector3.create(v1[0], v1[1], v1[2]),
+                            pyrr.vector3.create(v2[0], v2[1], v2[2]),
+                            pyrr.vector3.create(v3[0], v3[1], v3[2])
+                        )
+                        if intersect is not None:
+                            face_t = intersect[0] if intersect[0] > 0 else None
+                    if face_t is not None:
+                        if min_t is None:
+                            min_t = (face_t, id)
+                        elif face_t < min_t[0]:
+                            min_t = (face_t, id)
+                if min_t is not None:
+                    self.renderer.drawOutline(min_t[1], (0, 1, 0), width=3.0)
+                    self.hoveredFace = min_t[1]
+        else:
+            self.hoveredFace = None
+                        
+
 
     def drawSelected(self):
         for face in self.selecteditems['faces']:

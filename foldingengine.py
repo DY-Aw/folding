@@ -14,6 +14,18 @@ class Fold:
         p1x, p1y, p1z = self.points[point1]
         p2x, p2y, p2z = self.points[point2]
 
+        model = self.faces[face].model_transform
+        p1Transformed = pyrr.matrix44.apply_to_vector(
+            model,
+            pyrr.vector4.create(p1x, p1y, p1z, 1.0)
+        )
+        p2Transformed = pyrr.matrix44.apply_to_vector(
+            model,
+            pyrr.vector4.create(p2x, p2y, p2z, 1.0)
+        )
+        p1x, p1y, p1z = p1Transformed[0], p1Transformed[1], p1Transformed[2]
+        p2x, p2y, p2z = p2Transformed[0], p2Transformed[1], p2Transformed[2]
+
         # Translation matrices
         toOrigin = pyrr.matrix44.create_from_translation((-p1x, -p1y, -p1z))
         fromOrigin = pyrr.matrix44.inverse(toOrigin)
@@ -52,13 +64,13 @@ class Fold:
         )
 
         # Transform crease points to screen coordinates
-        point1Transformed = pyrr.matrix44.multiply(
-            pyrr.Vector4(np.append(self.points[point1], 1.0)),
-            transformMatrix
+        point1Transformed = pyrr.matrix44.apply_to_vector(
+            transformMatrix,
+            pyrr.Vector4(np.append(self.points[point1], 1.0))
         )
-        point2Transformed = pyrr.matrix44.multiply(
-            pyrr.Vector4(np.append(self.points[point2], 1.0)),
-            transformMatrix
+        point2Transformed = pyrr.matrix44.apply_to_vector(
+            transformMatrix,
+            pyrr.Vector4(np.append(self.points[point2], 1.0))
         )
 
         ndcP1 = point1Transformed / point1Transformed[3]
@@ -99,6 +111,7 @@ class Fold:
         self.points.update({p1ID: point1})
         self.points.update({p2ID: point2})
 
+        # Set up vertex data for old and new faces
         vertex = line1[0]
         startIndex = oldface.vertices.index(vertex)
         list_length = len(oldface.vertices)
