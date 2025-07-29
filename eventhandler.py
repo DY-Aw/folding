@@ -166,13 +166,14 @@ class EventHandler:
     
     def splitVertices(self):
         if len(self.newvertices) == 2:
-            self.foldengine.split(
-                self.newvertices[0][0],
-                self.newvertices[1][0],
-                self.newvertices[0][2],
-                self.newvertices[1][2],
-                self.newvertices[0][1]
-            )
+            if set(self.newvertices[0][2]) != set(self.newvertices[1][2]):
+                self.foldengine.split(
+                    self.newvertices[0][0],
+                    self.newvertices[1][0],
+                    self.newvertices[0][2],
+                    self.newvertices[1][2],
+                    self.newvertices[0][1]
+                )
         self.newvertices = []
         self.selecteditems['points'] = {}
 

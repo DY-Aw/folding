@@ -11,3 +11,8 @@ faces json format:
             }
         }
     }
+
+Hotkeys:
+Q: Select edges
+V: Select a point along a selected edge
+X: Make a crease between two selected points
