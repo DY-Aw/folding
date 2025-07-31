@@ -12,6 +12,7 @@ class EventHandler:
         self.faces = self.renderer.faces
 
         self.RIGHTDOWN = False
+        self.SHIFTDOWN = False
         self.grab = False
         self.orbit = False
         self.selecteditems = {'faces': [], 'lines': {}, 'points': {}}
@@ -34,7 +35,8 @@ class EventHandler:
             if event.button == 1:
                 if self.hoveredLine != None:
                     if self.hoveredLine[0] not in self.selecteditems['lines'].keys():
-                        self.selecteditems['lines'] = {}
+                        if not self.SHIFTDOWN:
+                            self.selecteditems['lines'] = {}
                         self.selecteditems['lines'].update({self.hoveredLine[0]: self.hoveredLine[1]})
                     else:
                         del self.selecteditems['lines'][self.hoveredLine[0]]
@@ -48,7 +50,9 @@ class EventHandler:
                     self.hoveredPoint = None
                 if self.hoveredFace != None:                  
                     if self.hoveredFace not in self.selecteditems['faces']:
-                        self.selecteditems['faces'] = [self.hoveredFace]
+                        if not self.SHIFTDOWN:
+                            self.selecteditems['faces'] = []
+                        self.selecteditems['faces'].append(self.hoveredFace)
                     else:
                         self.selecteditems['faces'] = []
                     self.hoveredFace = None
@@ -70,8 +74,9 @@ class EventHandler:
             if self.orbit:
                 self.camera.orbit(event.rel[0] * self.orbitsens, -event.rel[1] * self.orbitsens)
             elif self.grab and self.RIGHTDOWN:
-                p1, p2, grabbedface = self.grabbed
-                self.foldengine.foldGrab(p1, p2, grabbedface, (pygame.mouse.get_pos(), event.rel, (self.sw, self.sh)), (self.camera.view_transform))
+                p1, p2, grabbedfaces = self.grabbed
+                for grabbedface in grabbedfaces:
+                    self.foldengine.foldGrab(p1, p2, grabbedface, (pygame.mouse.get_pos(), event.rel, (self.sw, self.sh)), (self.camera.view_transform))
     
         # Scroll zoom
         elif event.type == pygame.MOUSEWHEEL:
@@ -79,7 +84,7 @@ class EventHandler:
             self.camera._zoom(-event.y * scrollsens)
 
         # Letter keys
-        elif event.type == pygame.KEYUP:
+        elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 for mode in self.modes.keys():
                     self.modes[mode] = False
@@ -93,10 +98,17 @@ class EventHandler:
                 print("q", self.modes)
             if event.key == pygame.K_x:
                 self.splitVertices()
+                self.splitLines()
             if event.key == pygame.K_f:
                 self.swapMode("folding")
             if event.key == pygame.K_w:
                 self.swapMode("faceSelect", True)
+
+            if event.key == pygame.K_LSHIFT:
+                self.SHIFTDOWN = True
+        elif event.type == pygame.KEYUP:
+            if event.key == pygame.K_LSHIFT:
+                self.SHIFTDOWN = False
     
     def swapMode(self, mode, saveprevious = False):
         # Exits every mode and swaps to/from the desired mode
@@ -136,7 +148,11 @@ class EventHandler:
                     if lineID not in lines.keys():
                         lines.update({lineID: faceID})
             for line, face in lines.items():
-                a, b = line
+                try:
+                    a, b = line
+                except:
+                    print(lines)
+                    raise("something went wrong")
                 rightbound, m_x, m_y = mouseToLine(points[a], points[b], pygame.mouse.get_pos())
                 if m_x < 0 or m_x > rightbound:
                     continue
@@ -170,12 +186,12 @@ class EventHandler:
                     (self.sw, self.sh)
                 )
                 b, m_x, m_y = mouseToLine(point1, point2, pygame.mouse.get_pos())
-                if m_x > 1e-6 and m_x < b-1e-6:
+                if m_x > 0 and m_x < b:
                     ratio = m_x/b
-                elif m_x <= 1e-6:
-                    ratio = 1e-6
-                elif m_x >= b-1e-6:
-                    ratio = 1-1e-6
+                elif m_x <= 0:
+                    ratio = 0
+                elif m_x >= b:
+                    ratio = 1
                 tempPoint = []
                 for i in range(3):
                     tempPoint.append(p1[i] + ratio * (p2[i] - p1[i]))
@@ -186,17 +202,26 @@ class EventHandler:
             self.hoveredPoint = None
     
     def splitVertices(self):
-        if len(self.newvertices) == 2:
+        if len(self.newvertices) == 2 and len(self.selecteditems['faces']) > 0:
             if set(self.newvertices[0][2]) != set(self.newvertices[1][2]):
-                self.foldengine.split(
-                    self.newvertices[0][0],
-                    self.newvertices[1][0],
-                    self.newvertices[0][2],
-                    self.newvertices[1][2],
-                    self.newvertices[0][1]
-                )
+                for face in self.selecteditems['faces']:
+                    self.foldengine.splitBetweenPoints(
+                        self.newvertices[0][0],
+                        self.newvertices[1][0],
+                        self.newvertices[0][2],
+                        self.newvertices[1][2],
+                        face
+                    )
         self.newvertices = []
         self.selecteditems['points'] = {}
+
+    def splitLines(self):
+        lines = list(self.selecteditems['lines'])
+        if len(lines) == 2 and len(self.selecteditems['faces']) > 0:
+            line1 = lines[0]
+            line2 = lines[1]
+            for face in self.selecteditems['faces']:
+                self.foldengine.splitBetweenEdges(line1, line2, face)
     
     def faceSelect(self):
         self.hoveredFace = None
@@ -245,7 +270,7 @@ class EventHandler:
                 lineslist = list(self.selecteditems['lines'].keys())
                 if len(lineslist) == 1:
                     p1, p2 = lineslist[0]
-                    grabbedface = self.selecteditems['faces'][0]
+                    grabbedface = self.selecteditems['faces']
                     self.grabbed = (p1, p2, grabbedface)
                     self.grab = True
                 else:

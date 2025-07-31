@@ -98,6 +98,7 @@ class App:
             glUseProgram(self.shader)
             for face in self.faces.keys():
                 self.renderer.drawFace(face)
+                self.renderer.drawOutline(face, (0, 0, 0), 1.0)
             self.eventhandler.lineSelect()
             self.eventhandler.faceSelect()
             self.eventhandler.drawSelected()

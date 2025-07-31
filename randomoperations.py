@@ -82,6 +82,56 @@ def nextLetterInSequence(letter, uppercase=False):
 def nextFaceInSequence(faceID):
     return 'F'+str(int(faceID[1:])+1)
 
+# Creates a point at specified local coordinates 
+def createPoint(pointsdict, coordinates):
+    sortedIDs = list(pointsdict.keys())
+    sortedIDs.sort(key=AlphaID)
+    pointID = nextLetterInSequence(sortedIDs[-1])
+    pointsdict.update({pointID: coordinates})
+    return pointID
+
+# Find the intersection of lines defined by (p1, p2) and (p3, p4)
+def findIntersection(p1, p2, p3, p4):
+    x1, y1 = p1
+    x2, y2 = p2
+    x3, y3 = p3
+    x4, y4 = p4
+
+    A1 = y2 - y1
+    B1 = x1 - x2
+    C1 = A1 * x1 + B1 * y1
+
+    A2 = y4 - y3
+    B2 = x3 - x4
+    C2 = A2 * x3 + B2 * y3
+
+    determinant = A1 * B2 - A2 * B1
+
+    EPSILON = 1e-9 
+
+    if abs(determinant) < EPSILON:
+        return None
+    else:
+        x = (C1 * B2 - C2 * B1) / determinant
+        y = (A1 * C2 - A2 * C1) / determinant
+        return (x, y)
+    
+def create2dTranslationMatrix(dx, dy):
+    matrix = np.array([
+        [1.0, 0.0, dx],
+        [0.0, 1.0, dy],
+        [0.0, 0.0, 1.0]
+    ])
+    return matrix
+
+def create2dRotationMatrix(theta):
+    matrix = np.array([
+        [math.cos(theta), -math.sin(theta), 0],
+        [math.sin(theta), math.cos(theta), 0],
+        [0, 0, 1]
+    ])
+    return(matrix)
+
 # Casts a ray from the cursor starting from the near clipping plane.
 def mouseToRay(screenInfo, proj, view):
     sw, sh = screenInfo

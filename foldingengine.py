@@ -102,14 +102,160 @@ class Fold:
         self.fold(point1, point2, face, theta)
 
         
-    def split(self, point1, point2, line1, line2, face):
-        oldface = self.faces[face]
-        pointIDs = list(self.points.keys())
-        pointIDs.sort(key=AlphaID)
-        p1ID = nextLetterInSequence(pointIDs[-1], True)
-        p2ID = nextLetterInSequence(p1ID, True)
-        self.points.update({p1ID: point1})
-        self.points.update({p2ID: point2})
+    def splitBetweenPoints(self, point1, point2, line1, line2, face):
+        translationmatrix = create2dTranslationMatrix(-point1[0], -point1[2])
+        rotationmatrix = create2dRotationMatrix(-math.atan2(point2[2]-point1[2],point2[0]-point1[0]))
+        transformation = rotationmatrix @ translationmatrix
+        pointsTransformed = {}
+        for vertex in self.faces[face].vertices:
+            pointsTransformed.update({
+                vertex: (transformation @ (self.points[vertex][0], self.points[vertex][2], 1.0))
+            })
+        face1Vertices = []
+        face2Vertices = []
+        for i, vertex in enumerate(self.faces[face].vertices):
+            previousvertex = self.faces[face].vertices[i-1]
+            currentvertex = self.faces[face].vertices[i]
+            if np.sign(pointsTransformed[currentvertex][1]) != np.sign(pointsTransformed[previousvertex][1]):
+                if pointsTransformed[currentvertex][1] != 0 and pointsTransformed[previousvertex][1] != 0:
+                    p1 = pointsTransformed[previousvertex]
+                    p2 = pointsTransformed[currentvertex]
+                    try:
+                        xint = (p2[1]*p1[0]-p1[1]*p2[0])/(p2[1]-p1[1])
+                    except:
+                        print(f'p1: {p1}, p2: {p2}. Division by zero')
+                    newpoint = pyrr.matrix33.inverse(transformation) @ (xint, 0.0, 1.0)
+                    newpointID = createPoint(self.points, (newpoint[0], 0, newpoint[1]))
+                    face1Vertices.append(newpointID)
+                    face2Vertices.append(newpointID)
+            if pointsTransformed[currentvertex][1] > 0:
+                face1Vertices.append(currentvertex)
+            elif pointsTransformed[currentvertex][1] < 0:
+                face2Vertices.append(currentvertex)
+            elif pointsTransformed[currentvertex][1] == 0:
+                face1Vertices.append(currentvertex)
+                face2Vertices.append(currentvertex)
+        face_data1 = {
+            'vertices': face1Vertices
+        }
+        face_data2 = {
+            'vertices': face2Vertices
+        }
+        model_transform = self.faces[face].model_transform
+        faceColorUniformLocation = self.faces[face].faceColorUniformLocation
+        self.faces[face] = Face(face_data1, self.points, faceColorUniformLocation, model_transform)
+        faceIDs = list(self.faces.keys())
+        faceIDs.sort(key=FaceID)
+        self.faces.update({nextFaceInSequence(faceIDs[-1]): Face(face_data2, self.points, faceColorUniformLocation, model_transform)})
+
+
+    def splitBetweenEdges(self, line1, line2, face):
+        p11, p12 = self.points[line1[0]], self.points[line1[1]]
+        p21, p22 = self.points[line2[0]], self.points[line2[1]]
+
+        _int = findIntersection(
+            (p11[0], p11[2]),
+            (p12[0], p12[2]),
+            (p21[0], p21[2]),
+            (p22[0], p22[2])
+        )
+        if _int is not None:
+            xint, yint = _int
+            translationmatrix = create2dTranslationMatrix(-xint, -yint)
+            l1translated = translationmatrix @ ((p11[0]+p12[0])/2, (p11[2]+p12[2])/2, 1.0)
+            l2translated = translationmatrix @ ((p21[0]+p22[0])/2, (p21[2]+p22[2])/2, 1.0)
+            a1 = math.atan2(l1translated[1], l1translated[0])
+            a2 = math.atan2(l2translated[1], l2translated[0])
+            v1 = np.array([math.cos(a1), math.sin(a1)])
+            v2 = np.array([math.cos(a2), math.sin(a2)])
+            vsum = pyrr.vector.normalize(v1 + v2)
+            theta = math.atan2(vsum[1], vsum[0])
+            rotationmatrix = create2dRotationMatrix(0-theta)
+        
+        else:
+            # Parallel
+            if p11[0] != p12[0]:
+                int1 = findIntersection(
+                    (p11[0], p11[2]),
+                    (p12[0], p12[2]),
+                    (0, 0),
+                    (0, 1)
+                )
+                int2 = findIntersection(
+                    (p21[0], p21[2]),
+                    (p22[0], p22[2]),
+                    (0, 0),
+                    (0, 1)
+                )
+                translationmatrix = create2dTranslationMatrix(0, -(int1[1]+int2[1])/2)
+            else:
+                int1 = findIntersection(
+                    (p11[0], p11[2]),
+                    (p12[0], p12[2]),
+                    (0, 0),
+                    (1, 0)
+                )
+                int2 = findIntersection(
+                    (p21[0], p21[2]),
+                    (p22[0], p22[2]),
+                    (0, 0),
+                    (1, 0)
+                )
+                translationmatrix = create2dTranslationMatrix(-(int1[0]+int2[0])/2, 0)
+            rotationmatrix = create2dRotationMatrix(-math.atan2(p12[2]-p11[2], p12[0]-p11[0]))
+
+        transformation = rotationmatrix @ translationmatrix
+
+        pointsTransformed = {}
+        for vertex in self.faces[face].vertices:
+            pointsTransformed.update({
+                vertex: (transformation @ (self.points[vertex][0], self.points[vertex][2], 1.0))
+            })
+        face1Vertices = []
+        face2Vertices = []
+        for i, vertex in enumerate(self.faces[face].vertices):
+            previousvertex = self.faces[face].vertices[i-1]
+            currentvertex = self.faces[face].vertices[i]
+            if np.sign(pointsTransformed[currentvertex][1]) != np.sign(pointsTransformed[previousvertex][1]):
+                if pointsTransformed[currentvertex][1] != 0 and pointsTransformed[previousvertex][1] != 0:
+                    p1 = pointsTransformed[previousvertex]
+                    p2 = pointsTransformed[currentvertex]
+                    try:
+                        xint = (p2[1]*p1[0]-p1[1]*p2[0])/(p2[1]-p1[1])
+                    except:
+                        print(f'p1: {p1}, p2: {p2}. Division by zero')
+                    newpoint = pyrr.matrix33.inverse(transformation) @ (xint, 0.0, 1.0)
+                    newpointID = createPoint(self.points, (newpoint[0], 0, newpoint[1]))
+                    face1Vertices.append(newpointID)
+                    face2Vertices.append(newpointID)
+            if pointsTransformed[currentvertex][1] > 0:
+                face1Vertices.append(currentvertex)
+            elif pointsTransformed[currentvertex][1] < 0:
+                face2Vertices.append(currentvertex)
+            elif pointsTransformed[currentvertex][1] == 0:
+                face1Vertices.append(currentvertex)
+                face2Vertices.append(currentvertex)
+        face_data1 = {
+            'vertices': face1Vertices
+        }
+        face_data2 = {
+            'vertices': face2Vertices
+        }
+        model_transform = self.faces[face].model_transform
+        faceColorUniformLocation = self.faces[face].faceColorUniformLocation
+        self.faces[face] = Face(face_data1, self.points, faceColorUniformLocation, model_transform)
+        faceIDs = list(self.faces.keys())
+        faceIDs.sort(key=FaceID)
+        self.faces.update({nextFaceInSequence(faceIDs[-1]): Face(face_data2, self.points, faceColorUniformLocation, model_transform)})
+
+
+
+        
+#test
+
+        '''oldface = self.faces[face]
+        p1ID = createPoint(self.points, point1)
+        p2ID = createPoint(self.points, point2)
 
         # Set up vertex data for old and new faces
         vertex = line1[0]
@@ -143,6 +289,4 @@ class Fold:
         faceIDs = list(self.faces.keys())
         faceIDs.sort(key=FaceID)
         self.faces.update({nextFaceInSequence(faceIDs[-1]): Face(face_data2, self.points, faceColorUniformLocation, model_transform)})
-
-        
-        
+        '''
