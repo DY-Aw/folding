@@ -1,6 +1,6 @@
 import numpy as np
 import math
-import pyrr
+from pyglm import glm
 from randomoperations import *
 from face import Face
 
@@ -15,34 +15,19 @@ class Fold:
         p2x, p2y, p2z = self.points[point2]
 
         model = self.faces[face].model_transform
-        p1Transformed = pyrr.matrix44.apply_to_vector(
-            model,
-            pyrr.vector4.create(p1x, p1y, p1z, 1.0)
-        )
-        p2Transformed = pyrr.matrix44.apply_to_vector(
-            model,
-            pyrr.vector4.create(p2x, p2y, p2z, 1.0)
-        )
+        p1Transformed = model * glm.vec4(p1x, p1y, p1z, 1.0)
+        p2Transformed = model * glm.vec4(p2x, p2y, p2z, 1.0)
         p1x, p1y, p1z = p1Transformed[0], p1Transformed[1], p1Transformed[2]
         p2x, p2y, p2z = p2Transformed[0], p2Transformed[1], p2Transformed[2]
 
         # Translation matrices
-        toOrigin = pyrr.matrix44.create_from_translation((-p1x, -p1y, -p1z))
-        fromOrigin = pyrr.matrix44.inverse(toOrigin)
+        toOrigin = glm.translate(glm.mat4(1.0), glm.vec3(-p1x, -p1y, -p1z))
+        fromOrigin = glm.inverse(toOrigin)
 
         # Rotation matrix
-        rotationMatrix = pyrr.matrix44.create_from_axis_rotation(
-            axis=pyrr.vector.normalize(pyrr.vector3.create(
-                x=(p2x - p1x),
-                y=(p2y - p1y),
-                z=(p2z - p1z),
-                dtype=np.float32
-            )),
-            theta=angle,
-            dtype=np.float32
-        )
+        rotationMatrix = glm.rotate(glm.mat4(1.0), angle, glm.normalize(glm.vec3(p2x-p1x, p2y-p1y, p2z-p1z)))
 
-        self.faces[face].updateModelMatrix(pyrr.matrix44.multiply(pyrr.matrix44.multiply(toOrigin, rotationMatrix), fromOrigin))
+        self.faces[face].updateModelMatrix(fromOrigin * rotationMatrix * toOrigin)
 
     def foldGrab(self, point1, point2, face, mouseinfo, view_transform):
         # Transform mouse data from pygame screen coordinates to OpenGl screen coordinates
@@ -55,23 +40,11 @@ class Fold:
         initialMousePos = convertToOpenGLCoordinates(initialMousePos, screenInfo)
         # Create transformation matrix using model and view matrices
         model_transform = self.faces[face].model_transform
-        transformMatrix = pyrr.matrix44.multiply(
-            pyrr.matrix44.multiply(
-                model_transform,
-                view_transform
-            ),
-            self.projection_transform
-        )
+        transformMatrix = self.projection_transform * view_transform * model_transform
 
         # Transform crease points to screen coordinates
-        point1Transformed = pyrr.matrix44.apply_to_vector(
-            transformMatrix,
-            pyrr.Vector4(np.append(self.points[point1], 1.0))
-        )
-        point2Transformed = pyrr.matrix44.apply_to_vector(
-            transformMatrix,
-            pyrr.Vector4(np.append(self.points[point2], 1.0))
-        )
+        point1Transformed = transformMatrix * glm.vec4(*self.points[point1], 1.0)
+        point2Transformed = transformMatrix * glm.vec4(*self.points[point2], 1.0)
 
         ndcP1 = point1Transformed / point1Transformed[3]
         ndcP2 = point2Transformed / point2Transformed[3]
@@ -102,7 +75,7 @@ class Fold:
         self.fold(point1, point2, face, theta)
 
         
-    def splitBetweenPoints(self, point1, point2, line1, line2, face):
+    def splitBetweenPoints(self, point1, point2, face):
         translationmatrix = create2dTranslationMatrix(-point1[0], -point1[2])
         rotationmatrix = create2dRotationMatrix(-math.atan2(point2[2]-point1[2],point2[0]-point1[0]))
         transformation = rotationmatrix @ translationmatrix
@@ -124,7 +97,7 @@ class Fold:
                         xint = (p2[1]*p1[0]-p1[1]*p2[0])/(p2[1]-p1[1])
                     except:
                         print(f'p1: {p1}, p2: {p2}. Division by zero')
-                    newpoint = pyrr.matrix33.inverse(transformation) @ (xint, 0.0, 1.0)
+                    newpoint = glm.inverse(transformation) * glm.vec3(xint, 0.0, 1.0)
                     newpointID = createPoint(self.points, (newpoint[0], 0, newpoint[1]))
                     face1Vertices.append(newpointID)
                     face2Vertices.append(newpointID)
@@ -162,13 +135,13 @@ class Fold:
         if _int is not None:
             xint, yint = _int
             translationmatrix = create2dTranslationMatrix(-xint, -yint)
-            l1translated = translationmatrix @ ((p11[0]+p12[0])/2, (p11[2]+p12[2])/2, 1.0)
-            l2translated = translationmatrix @ ((p21[0]+p22[0])/2, (p21[2]+p22[2])/2, 1.0)
+            l1translated = translationmatrix * glm.vec3((p11[0]+p12[0])/2, (p11[2]+p12[2])/2, 1.0)
+            l2translated = translationmatrix * glm.vec3((p21[0]+p22[0])/2, (p21[2]+p22[2])/2, 1.0)
             a1 = math.atan2(l1translated[1], l1translated[0])
             a2 = math.atan2(l2translated[1], l2translated[0])
-            v1 = np.array([math.cos(a1), math.sin(a1)])
-            v2 = np.array([math.cos(a2), math.sin(a2)])
-            vsum = pyrr.vector.normalize(v1 + v2)
+            v1 = glm.vec2(math.cos(a1), math.sin(a1))
+            v2 = glm.vec2(math.cos(a2), math.sin(a2))
+            vsum = glm.normalize(v1 + v2)
             theta = math.atan2(vsum[1], vsum[0])
             rotationmatrix = create2dRotationMatrix(0-theta)
         
@@ -204,12 +177,12 @@ class Fold:
                 translationmatrix = create2dTranslationMatrix(-(int1[0]+int2[0])/2, 0)
             rotationmatrix = create2dRotationMatrix(-math.atan2(p12[2]-p11[2], p12[0]-p11[0]))
 
-        transformation = rotationmatrix @ translationmatrix
+        transformation = rotationmatrix * translationmatrix
 
         pointsTransformed = {}
         for vertex in self.faces[face].vertices:
             pointsTransformed.update({
-                vertex: (transformation @ (self.points[vertex][0], self.points[vertex][2], 1.0))
+                vertex: (transformation * glm.vec3(self.points[vertex][0], self.points[vertex][2], 1.0))
             })
         face1Vertices = []
         face2Vertices = []
@@ -224,7 +197,7 @@ class Fold:
                         xint = (p2[1]*p1[0]-p1[1]*p2[0])/(p2[1]-p1[1])
                     except:
                         print(f'p1: {p1}, p2: {p2}. Division by zero')
-                    newpoint = pyrr.matrix33.inverse(transformation) @ (xint, 0.0, 1.0)
+                    newpoint =  glm.inverse(transformation) * glm.vec3(xint, 0.0, 1.0)
                     newpointID = createPoint(self.points, (newpoint[0], 0, newpoint[1]))
                     face1Vertices.append(newpointID)
                     face2Vertices.append(newpointID)
@@ -247,46 +220,3 @@ class Fold:
         faceIDs = list(self.faces.keys())
         faceIDs.sort(key=FaceID)
         self.faces.update({nextFaceInSequence(faceIDs[-1]): Face(face_data2, self.points, faceColorUniformLocation, model_transform)})
-
-
-
-        
-#test
-
-        '''oldface = self.faces[face]
-        p1ID = createPoint(self.points, point1)
-        p2ID = createPoint(self.points, point2)
-
-        # Set up vertex data for old and new faces
-        vertex = line1[0]
-        startIndex = oldface.vertices.index(vertex)
-        list_length = len(oldface.vertices)
-        if oldface.vertices[(startIndex+1)%list_length] == line1[1]:
-            vertex = line1[1]
-            startIndex = (startIndex+1)%list_length
-        firstFaceVertices = [p2ID, p1ID, vertex]
-        secondFaceVertices = [p1ID, p2ID]
-        index = startIndex
-        while oldface.vertices[index] not in line2:
-            index = (index+1)%list_length
-            firstFaceVertices.append(oldface.vertices[index])
-        index = (index+1)%list_length
-        while index != startIndex:
-            secondFaceVertices.append(oldface.vertices[index])
-            index = (index+1)%list_length
-        
-        face_data1 = {
-            'vertices': firstFaceVertices
-        }
-        face_data2 = {
-            'vertices': secondFaceVertices
-        }
-        model_transform = oldface.model_transform
-        faceColorUniformLocation = oldface.faceColorUniformLocation
-
-        self.faces[face] = Face(face_data1, self.points, faceColorUniformLocation, model_transform)
-
-        faceIDs = list(self.faces.keys())
-        faceIDs.sort(key=FaceID)
-        self.faces.update({nextFaceInSequence(faceIDs[-1]): Face(face_data2, self.points, faceColorUniformLocation, model_transform)})
-        '''

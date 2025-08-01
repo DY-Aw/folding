@@ -208,8 +208,6 @@ class EventHandler:
                     self.foldengine.splitBetweenPoints(
                         self.newvertices[0][0],
                         self.newvertices[1][0],
-                        self.newvertices[0][2],
-                        self.newvertices[1][2],
                         face
                     )
         self.newvertices = []
@@ -233,22 +231,22 @@ class EventHandler:
                 model = face.model_transform
                 for i in range(len(list(face.triangles))//9):
                     j = 9 * i
-                    vert1 = pyrr.vector4.create(face.triangles[j], face.triangles[j+1], face.triangles[j+2], 1.0)
-                    vert2 = pyrr.vector4.create(face.triangles[j+3], face.triangles[j+4], face.triangles[j+5], 1.0)
-                    vert3 = pyrr.vector4.create(face.triangles[j+6], face.triangles[j+7], face.triangles[j+8], 1.0)
+                    vert1 = glm.vec4(face.triangles[j], face.triangles[j+1], face.triangles[j+2], 1.0)
+                    vert2 = glm.vec4(face.triangles[j+3], face.triangles[j+4], face.triangles[j+5], 1.0)
+                    vert3 = glm.vec4(face.triangles[j+6], face.triangles[j+7], face.triangles[j+8], 1.0)
 
-                    v1 = pyrr.matrix44.apply_to_vector(model, vert1)
-                    v2 = pyrr.matrix44.apply_to_vector(model, vert2)
-                    v3 = pyrr.matrix44.apply_to_vector(model, vert3)
+                    v1 = model * vert1
+                    v2 = model * vert2
+                    v3 = model * vert3
                     v1 = v1 / v1[3]
                     v2 = v2 / v2[3]
                     v3 = v3 / v3[3]
 
                     intersect = triangleIntersect(
                         rayOrigin, rayDirection,
-                        pyrr.vector3.create(v1[0], v1[1], v1[2]),
-                        pyrr.vector3.create(v2[0], v2[1], v2[2]),
-                        pyrr.vector3.create(v3[0], v3[1], v3[2])
+                        glm.vec3(v1[0], v1[1], v1[2]),
+                        glm.vec3(v2[0], v2[1], v2[2]),
+                        glm.vec3(v3[0], v3[1], v3[2])
                     )
                     if intersect is not None:
                         face_t = intersect[0] if intersect[0] > 0 else None

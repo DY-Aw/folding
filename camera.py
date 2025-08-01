@@ -1,6 +1,6 @@
 import numpy as np
 import math
-import pyrr
+from pyglm import glm
 
 from OpenGL.GL import *
 
@@ -41,10 +41,9 @@ class Camera:
         y = -self.zoom * yc
         z = -self.zoom * zc
 
-        self.position = pyrr.vector3.create(x=x, y=y, z=z)
+        self.position = glm.vec3(x, y, z)
         eye = self.position
-        target = pyrr.vector3.create(x=0.0, y=0.0, z=0.0)
-        up = pyrr.vector3.create(x=0.0, y=1.0, z=0.0)
-
-        self.view_transform = pyrr.matrix44.create_look_at(eye, target, up, dtype=np.float32)
-        glUniformMatrix4fv(modelViewLocation, 1, GL_FALSE, self.view_transform)
+        target = glm.vec3(0.0, 0.0, 0.0)
+        up = glm.vec3(0.0, 1.0, 0.0)
+        self.view_transform = glm.lookAt(eye, target, up)
+        glUniformMatrix4fv(modelViewLocation, 1, GL_FALSE, np.array(glm.transpose(self.view_transform)))

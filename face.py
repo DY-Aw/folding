@@ -1,15 +1,15 @@
 import numpy as np
 from OpenGL.GL import *
 import ctypes
-import pyrr
+from pyglm import glm
 
 class Face:
 
-    def __init__(self, face_data, points, faceColorUniformLocation, matrix=pyrr.matrix44.create_identity()):
+    def __init__(self, face_data, points, faceColorUniformLocation, matrix=glm.mat4()):
         self.vertices = face_data['vertices']
         self.points = points
 
-        self.sunlight = pyrr.vector.normalize(pyrr.vector3.create(0.5, 0.7, -0.5))
+        self.sunlight = glm.normalize(glm.vec3(0.5, 0.7, -0.5))
         self.frontcolor = (1.0, 0.0, 0.0)
         self.backcolor = (1.0, 1.0, 1.0)
 
@@ -33,25 +33,16 @@ class Face:
         self.faceColorUniformLocation = faceColorUniformLocation
 
     def colorcalculate(self, position):
-        pointinquestion = pyrr.matrix44.multiply(
-            pyrr.Vector4(np.append(self.points[self.vertices[0]], 1.0)),
-            pyrr.matrix44.inverse(self.model_transform).T
+        pointinquestion = glm.inverseTranspose(self.model_transform) * glm.vec4(*self.points[self.vertices[0]], 1.0)
+        pointinquestion = glm.vec3(pointinquestion)
 
-        )
-        pointinquestion = pyrr.vector3.create(
-            pointinquestion[0],
-            pointinquestion[1],
-            pointinquestion[2]
-        )
+        facing = glm.normalize(pointinquestion - position)
 
-        facing = pyrr.vector.normalize(pyrr.Vector3(pointinquestion - position))
-        facing = pyrr.vector3.create(facing[0], facing[1], facing[2])
-
-        facenormal = pyrr.matrix44.multiply(pyrr.vector4.create(0, 1, 0, 0), self.model_transform)
-        normal = pyrr.vector.normalize(pyrr.vector3.create(facenormal[0], facenormal[1], facenormal[2]))
+        facenormal = self.model_transform * glm.vec4(0, 1, 0, 0)
+        normal = glm.normalize(glm.vec3(facenormal))
         
         #color calculation
-        dot_product = pyrr.vector.dot(normal, facing)
+        dot_product = glm.dot(normal, facing)
         if dot_product < 0:
             basecolor = self.frontcolor
         else:
@@ -59,7 +50,7 @@ class Face:
             normal = -normal
 
         c1, c2, c3 = basecolor
-        sun_dot = pyrr.vector.dot(normal, self.sunlight)
+        sun_dot = glm.dot(normal, self.sunlight)
         multiplier = (sun_dot / 2.5) + 0.7
         self.color = [
             multiplier * c1,
@@ -76,7 +67,7 @@ class Face:
         return tuple(triangles)
     
     def updateModelMatrix(self, matrix):
-        self.model_transform = pyrr.matrix44.multiply(self.model_transform, matrix)
+        self.model_transform = matrix * self.model_transform
 
     def destroy(self):
         glDeleteVertexArrays(1, (self.tvao,))

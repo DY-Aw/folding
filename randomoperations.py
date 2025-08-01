@@ -1,4 +1,4 @@
-import pyrr
+from pyglm import glm
 import numpy as np
 import math
 import pygame
@@ -21,16 +21,7 @@ def convertToPygameCoordinates(xy, s):
 
 # Converts local space coordinates to ndc
 def getScreenCoordinates(point, model, view, projection):
-    transformed = pyrr.matrix44.apply_to_vector(
-        pyrr.matrix44.multiply(
-            pyrr.matrix44.multiply(
-                model,
-                view
-            ),
-            projection
-        ),
-        np.append(point,1.0)
-    )
+    transformed = projection * view * model * glm.vec4(*point, 1.0)
     return (transformed[0]/transformed[3], transformed[1]/transformed[3])
 
 # Takes mouse position relative to a given line
@@ -117,43 +108,43 @@ def findIntersection(p1, p2, p3, p4):
         return (x, y)
     
 def create2dTranslationMatrix(dx, dy):
-    matrix = np.array([
-        [1.0, 0.0, dx],
-        [0.0, 1.0, dy],
-        [0.0, 0.0, 1.0]
-    ])
+    matrix = glm.mat3(
+        1.0, 0.0, 0.0,
+        0.0, 1.0, 0.0,
+        dx, dy, 1.0
+    )
     return matrix
 
 def create2dRotationMatrix(theta):
-    matrix = np.array([
-        [math.cos(theta), -math.sin(theta), 0],
-        [math.sin(theta), math.cos(theta), 0],
-        [0, 0, 1]
-    ])
-    return(matrix)
+    matrix = glm.mat3(
+        glm.cos(theta), glm.sin(theta), 0,
+        -glm.sin(theta), glm.cos(theta), 0,
+        0, 0, 1
+    )
+    return matrix
 
 # Casts a ray from the cursor starting from the near clipping plane.
 def mouseToRay(screenInfo, proj, view):
     sw, sh = screenInfo
     mouseX, mouseY = convertToOpenGLCoordinates(pygame.mouse.get_pos(), (sw, sh))
-    near = pyrr.Vector4([mouseX, mouseY, -1.0, 1.0], dtype=np.float32)
-    far = pyrr.Vector4([mouseX, mouseY, 1.0, 1.0], dtype=np.float32)
+    near = glm.vec4(mouseX, mouseY, -1.0, 1.0)
+    far = glm.vec4(mouseX, mouseY, 1.0, 1.0)
 
-    iproj = pyrr.matrix44.inverse(proj)
-    iview = pyrr.matrix44.inverse(view)
+    iproj = glm.inverse(proj)
+    iview = glm.inverse(view)
 
-    view_near = pyrr.matrix44.apply_to_vector(iproj, near)
+    view_near = iproj * near
     view_near = view_near / view_near[3]
-    view_far = pyrr.matrix44.apply_to_vector(iproj, far)
+    view_far = iproj * far
     view_far = view_far / view_far[3]
     view_vec = view_far - view_near
 
-    rayOrigin = pyrr.matrix44.apply_to_vector(iview, view_near)
+    rayOrigin = iview * view_near
     rayOrigin = rayOrigin / rayOrigin[3]
 
-    rayDirection = pyrr.matrix44.apply_to_vector(iview, pyrr.vector4.create(view_vec[0], view_vec[1], view_vec[2], 0.0))
-    rayOrigin = pyrr.vector3.create(rayOrigin[0], rayOrigin[1], rayOrigin[2])
-    rayDirection = pyrr.vector3.create(rayDirection[0], rayDirection[1], rayDirection[2])
+    rayDirection = iview * glm.vec4(view_vec[0], view_vec[1], view_vec[2], 0.0)
+    rayOrigin = glm.vec3(rayOrigin[0], rayOrigin[1], rayOrigin[2])
+    rayDirection = glm.vec3(rayDirection[0], rayDirection[1], rayDirection[2])
     return rayOrigin, rayDirection
 
 # Returns the distance from the ray origin at which the given triangle intersects the ray. Returns None if no intersection.
@@ -161,20 +152,20 @@ def triangleIntersect(rayOrigin, rayDirection, v0, v1, v2):
     edge1 = v1 - v0
     edge2 = v2 - v0
 
-    pvec = pyrr.vector3.cross(rayDirection, edge2)
-    det = pyrr.vector3.dot(edge1, pvec)
+    pvec = glm.cross(rayDirection, edge2)
+    det = glm.dot(edge1, pvec)
     inv_det = 1.0/det
 
     tvec = rayOrigin - v0
-    u = pyrr.vector3.dot(tvec, pvec) * inv_det
+    u = glm.dot(tvec, pvec) * inv_det
     if u < 0.0 or u > 1.0:
         return None
-    qvec = pyrr.vector3.cross(tvec, edge1)
-    v = pyrr.vector3.dot(rayDirection, qvec) * inv_det
+    qvec = glm.cross(tvec, edge1)
+    v = glm.dot(rayDirection, qvec) * inv_det
     if v < 0.0 or (u + v) > 1.0:
         return None
     
-    t = np.dot(edge2, qvec) * inv_det
+    t = glm.dot(edge2, qvec) * inv_det
     if t < 0:
         return None
     

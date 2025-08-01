@@ -1,7 +1,8 @@
 import pygame
 from OpenGL.GL import *
+import math
 import numpy as np
-import pyrr
+from pyglm import glm
 
 from filereader import *
 from foldingengine import Fold
@@ -41,15 +42,12 @@ class App:
         
         # Use actual window aspect ratio
         aspect_ratio = self.sw / self.sh
-        self.projection_transform = pyrr.matrix44.create_perspective_projection(
-            fovy = 45, aspect = aspect_ratio,
-            near = 0.1, far = 10, dtype=np.float32
-        )
+        self.projection_transform = glm.perspective(math.pi/4, aspect_ratio, 0.1, 10)
 
         # Define projection matrix
         glUniformMatrix4fv(
             self.modelProjectionLocation,
-            1, GL_FALSE, self.projection_transform
+            1, GL_FALSE, np.array(glm.transpose(self.projection_transform))
         )
 
         self.camera = Camera(camera_create("camera.json"))
@@ -77,13 +75,10 @@ class App:
                     self.sw, self.sh = pygame.display.get_surface().get_size()
                     glViewport(0, 0, self.sw, self.sh)
                     aspect_ratio = self.sw / self.sh
-                    self.projection_transform = pyrr.matrix44.create_perspective_projection(
-                        fovy = 45, aspect = aspect_ratio,
-                        near = 0.1, far = 10, dtype=np.float32
-                    )
+                    self.projection_transform = glm.perspective(math.pi/4, aspect_ratio, 0.1, 10)
                     glUniformMatrix4fv(
                         self.modelProjectionLocation,
-                        1, GL_FALSE, self.projection_transform
+                        1, GL_FALSE, np.array(glm.transpose(self.projection_transform))
                     )
 
                 # Interactions
