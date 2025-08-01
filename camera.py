@@ -46,4 +46,4 @@ class Camera:
         target = glm.vec3(0.0, 0.0, 0.0)
         up = glm.vec3(0.0, 1.0, 0.0)
         self.view_transform = glm.lookAt(eye, target, up)
-        glUniformMatrix4fv(modelViewLocation, 1, GL_FALSE, np.array(glm.transpose(self.view_transform)))
+        glUniformMatrix4fv(modelViewLocation, 1, GL_TRUE, np.array(self.view_transform))

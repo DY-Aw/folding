@@ -47,7 +47,7 @@ class App:
         # Define projection matrix
         glUniformMatrix4fv(
             self.modelProjectionLocation,
-            1, GL_FALSE, np.array(glm.transpose(self.projection_transform))
+            1, GL_TRUE, np.array(self.projection_transform)
         )
 
         self.camera = Camera(camera_create("camera.json"))

@@ -32,7 +32,7 @@ class Renderer:
 
         glUniform3fv(self.faceColorUniformLocation, 1, color)
 
-        glUniformMatrix4fv(self.modelMatrixLocation, 1, GL_FALSE, np.array(glm.transpose(self.faces[face].model_transform)))
+        glUniformMatrix4fv(self.modelMatrixLocation, 1, GL_TRUE, np.array(self.faces[face].model_transform))
 
         glDrawArrays(GL_POINTS, 0, 1)
         glDisable(GL_POLYGON_OFFSET_POINT)
@@ -46,7 +46,7 @@ class Renderer:
 
         glUniform3fv(self.faceColorUniformLocation, 1, color)
 
-        glUniformMatrix4fv(self.modelMatrixLocation, 1, GL_FALSE, np.array(glm.transpose(self.faces[face].model_transform)))
+        glUniformMatrix4fv(self.modelMatrixLocation, 1, GL_TRUE, np.array(self.faces[face].model_transform))
 
         glDrawArrays(GL_LINES, 0, len(vertexIDs))
     
@@ -60,7 +60,7 @@ class Renderer:
 
         glUniform3fv(self.faceColorUniformLocation, 1, color)
 
-        glUniformMatrix4fv(self.modelMatrixLocation, 1, GL_FALSE, np.array(glm.transpose(self.faces[face].model_transform)))
+        glUniformMatrix4fv(self.modelMatrixLocation, 1, GL_TRUE, np.array(self.faces[face].model_transform))
 
         glDrawArrays(GL_LINE_LOOP, 0, len(vertexIDs))
 
@@ -74,7 +74,7 @@ class Renderer:
         face.colorcalculate(self.camera.position)
         glUniform3fv(self.faceColorUniformLocation, 1, face.color)
 
-        glUniformMatrix4fv(self.modelMatrixLocation, 1, GL_FALSE, np.array(glm.transpose(face.model_transform)))
+        glUniformMatrix4fv(self.modelMatrixLocation, 1, GL_TRUE, np.array(face.model_transform))
         glDrawArrays(GL_TRIANGLES, 0, len(vertices))
         glDisable(GL_POLYGON_OFFSET_FILL)
 
