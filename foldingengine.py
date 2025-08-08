@@ -73,6 +73,8 @@ class Fold:
             theta = 0-theta
 
         self.fold(point1, point2, face, theta)
+        for faceID, edge in self.faces[face].connections.items():
+                self.grabEdge(faceID, tuple(edge), self.faces[face].model_transform)
 
         
     def splitBetweenPoints(self, point1, point2, face):
@@ -208,15 +210,81 @@ class Fold:
             elif pointsTransformed[currentvertex][1] == 0:
                 face1Vertices.append(currentvertex)
                 face2Vertices.append(currentvertex)
+        faceIDs = list(self.faces.keys())
+        faceIDs.sort(key=FaceID)
+        newfaceID = nextFaceInSequence(faceIDs[-1])
+        sharedVertices = self.findConnections(face1Vertices, face2Vertices)
+        face1Connections = {newfaceID: sharedVertices}
+        face2Connections = {face: sharedVertices}
+        for connection, sharededge in self.faces[face].connections.items():
+            a, b = sharededge
+            if a in face1Vertices and b in face1Vertices:
+                face1Connections[connection] = sharededge
+            if a in face2Vertices and b in face2Vertices:
+                face2Connections[connection] = sharededge
         face_data1 = {
-            'vertices': face1Vertices
+            'vertices': face1Vertices,
+            'connections': face1Connections
         }
         face_data2 = {
-            'vertices': face2Vertices
+            'vertices': face2Vertices,
+            'connections': face2Connections
         }
         model_transform = self.faces[face].model_transform
         faceColorUniformLocation = self.faces[face].faceColorUniformLocation
         self.faces[face] = Face(face_data1, self.points, faceColorUniformLocation, model_transform)
-        faceIDs = list(self.faces.keys())
-        faceIDs.sort(key=FaceID)
-        self.faces.update({nextFaceInSequence(faceIDs[-1]): Face(face_data2, self.points, faceColorUniformLocation, model_transform)})
+        self.faces.update({newfaceID: Face(face_data2, self.points, faceColorUniformLocation, model_transform)})
+    
+    def findConnections(self, face1Vertices, face2Vertices):
+        sharedVertices = []
+        for vertex in face1Vertices:
+            if vertex in face2Vertices:
+                sharedVertices.append(vertex)
+        if len(sharedVertices) == 2:
+            return tuple(sharedVertices)
+        return None
+            
+
+
+    def grabEdge(self, face, edge, final_model_transform):
+        point1, point2 = edge
+        point1Local = self.points[point1]
+        point2Local = self.points[point2]
+        point1WorldFinal = final_model_transform * glm.vec4(*point1Local, 1.0)
+        point2WorldFinal = final_model_transform * glm.vec4(*point2Local, 1.0)
+        point1WorldInitial = self.faces[face].model_transform * glm.vec4(*point1Local, 1.0)
+        point2WorldInitial = self.faces[face].model_transform * glm.vec4(*point2Local, 1.0)
+
+        if glm.length(point2WorldFinal - point2WorldInitial) < glm.length(point1WorldFinal - point1WorldInitial):
+            point1WorldInitial, point2WorldInitial = point2WorldInitial, point1WorldInitial
+            point1WorldFinal, point2WorldFinal = point2WorldFinal, point1WorldFinal
+        
+        # Translation matrix
+        translateTo = glm.translate(glm.mat4(1.0), glm.vec3(-point1WorldInitial))
+        translateFrom = glm.inverse(translateTo)
+
+        # Rotation matrix
+        p1WFatOrigin = glm.normalize(glm.vec3(point2WorldInitial - point1WorldInitial))
+        p2WFatOrigin = glm.normalize(glm.vec3(point2WorldFinal - point1WorldFinal))
+
+        dotproduct = glm.dot(p1WFatOrigin, p2WFatOrigin)
+        if dotproduct > 1:
+            dotproduct = 1
+        if dotproduct < -1:
+            dotproduct = -1
+
+        theta = math.acos(dotproduct)
+        k = glm.cross(p1WFatOrigin, p2WFatOrigin)
+        if np.all(np.isclose(k, 0.0)):
+            rotationMatrix = glm.mat4(1.0)
+        else:
+            k = glm.normalize(k)
+            matk = glm.mat3(
+                0, k[2], -k[1],
+                -k[2], 0, k[0],
+                k[1], -k[0], 0
+            )
+            rotationMatrix = glm.mat3(1.0) + math.sin(theta) * matk + (1 - math.cos(theta)) * matk * matk
+            rotationMatrix = glm.mat4(rotationMatrix)
+        transformation = translateFrom * rotationMatrix * translateTo
+        self.faces[face].model_transform = transformation * self.faces[face].model_transform

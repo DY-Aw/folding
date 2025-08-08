@@ -7,6 +7,7 @@ class Face:
 
     def __init__(self, face_data, points, faceColorUniformLocation, matrix=glm.mat4()):
         self.vertices = face_data['vertices']
+        self.connections = face_data['connections']
         self.points = points
 
         self.sunlight = glm.normalize(glm.vec3(0.5, 0.7, -0.5))

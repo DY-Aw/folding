@@ -1,8 +1,31 @@
 {
     "faces": {
         "F0": {
-            "vertices": ["A", "B", "D", "C"],
+            "vertices": ["A", "E", "I", "H"],
             "connections": {
+                "F1": ["E", "I"],
+                "F3": ["H", "I"]
+            }
+        },
+        "F1": {
+            "vertices": ["B", "F", "I", "E"],
+            "connections": {
+                "F0": ["E", "I"],
+                "F2": ["F", "I"]
+            }
+        },
+        "F2": {
+            "vertices": ["D", "G", "I", "F"],
+            "connections": {
+                "F1": ["F", "I"],
+                "F3": ["G", "I"]
+            }
+        },
+        "F3": {
+            "vertices": ["C", "H", "I", "G"],
+            "connections": {
+                "F0": ["H", "I"],
+                "F2": ["G", "I"]
             }
         }
     }
