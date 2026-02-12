@@ -1,0 +1,26 @@
+cmake_minimum_required(VERSION 3.10)
+project(folding)
+
+set(CMAKE_CXX_STANDARD 17)
+
+include_directories(include)
+
+include(FetchContent)
+FetchContent_Declare(
+  glfw
+  GIT_REPOSITORY https://github.com/glfw/glfw.git
+  GIT_TAG 3.3.8
+)
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(glfw)
+
+find_package(OpenGL REQUIRED)
+
+add_executable(main src/main.cpp src/shader.cpp src/mesh.cpp src/camera.cpp src/glad.c)
+
+target_include_directories(main PRIVATE include)
+
+target_link_libraries(main glfw)
+target_link_libraries(main OpenGL::GL)
+
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

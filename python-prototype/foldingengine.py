@@ -111,10 +111,12 @@ class Fold:
                 face1Vertices.append(currentvertex)
                 face2Vertices.append(currentvertex)
         face_data1 = {
-            'vertices': face1Vertices
+            'vertices': face1Vertices,
+            'connections': {}
         }
         face_data2 = {
-            'vertices': face2Vertices
+            'vertices': face2Vertices,
+            'connections': {}
         }
         model_transform = self.faces[face].model_transform
         faceColorUniformLocation = self.faces[face].faceColorUniformLocation
