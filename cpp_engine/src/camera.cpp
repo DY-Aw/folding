@@ -22,14 +22,15 @@ void Camera::updateViewMatrix(Shader &shader) {
 }
 
 void Camera::orbit(float xoffset, float yoffset) {
-    yaw += xoffset;
-    pitch += yoffset;
+    yaw += xoffset * orbitSens;
+    pitch += yoffset * orbitSens;
 
     if (pitch > 89.0f)  pitch = 89.0f;
     if (pitch < -89.0f) pitch = -89.0f;
 }
 
 void Camera::changeZoom(float yoffset) {
-    zoom -= yoffset;
+    zoom -= yoffset * zoomSens;
     if (zoom < 1.0f) zoom = 1.0f;
+    if (zoom > 45.0f) zoom = 45.0f;
 }

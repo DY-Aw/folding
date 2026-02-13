@@ -1,6 +1,7 @@
 #include "shader.h"
 #include "mesh.h"
 #include "camera.h"
+#include "events.h"
 #include <iostream>
 #include <vector>
 #include <glad/glad.h>
@@ -11,7 +12,7 @@
 Mesh* paper;
 const unsigned int sw = 1500;
 const unsigned int sh = 900;
-const float fovy = glm::radians(45.0f);
+const float yfov = glm::radians(45.0f);
 
 int main() {
     glfwInit();
@@ -24,28 +25,25 @@ int main() {
 
     glfwSetWindowUserPointer(window, &camera);
 
-    glm::mat4 projection = glm::perspective(fovy, (float)sw / (float)sh, 0.1f, 100.0f);
+    glm::mat4 projection = glm::perspective(yfov, (float)sw / (float)sh, 0.1f, 100.0f);
 
     shader.use();
     shader.setMat4("projection", projection);
     shader.setMat4("model", glm::mat4(1.0f));
 
     paper = new Mesh();
+    EventHandler eventhandler{window, &camera};
 
     glEnable(GL_DEPTH_TEST);
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         shader.use();
-        
+        eventhandler.poll();
         camera.updateViewMatrix(shader);
         paper->updateModelMatrix(shader);
-
-        paper->draw(); 
-
+        paper->draw();
         glfwSwapBuffers(window);
-        glfwPollEvents();
     }
 
     glDeleteProgram(shader.ID);

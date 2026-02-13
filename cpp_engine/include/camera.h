@@ -11,6 +11,8 @@ public:
     float yaw;
     float pitch;
     float zoom;
+    float orbitSens = 0.3f;
+    float zoomSens = 0.2f;
     glm::vec3 position;
 
     Camera(float yaw = -60.0f, float pitch = -30.0f, float zoom = 3.0f);
