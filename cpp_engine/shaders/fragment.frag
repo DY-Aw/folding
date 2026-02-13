@@ -7,7 +7,7 @@ in vec3 FragPos;
 void main() {
     vec3 baseColor = gl_FrontFacing ? vec3(1.0, 0.0, 0.0) : vec3(1.0, 1.0, 1.0);
     
-    float ambientStrength = 0.2;
+    float ambientStrength = 0.3;
     vec3 ambient = ambientStrength * vec3(1.0, 1.0, 1.0);
   	
     vec3 norm = normalize(Normal);
