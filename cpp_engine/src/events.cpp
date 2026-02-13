@@ -2,7 +2,6 @@
 
 void EventHandler::static_cursor_callback(GLFWwindow* window, double xpos, double ypos) {
     auto* handler = static_cast<EventHandler*>(glfwGetWindowUserPointer(window));
-
     if (handler) {
         handler->handle_cursor(static_cast<float>(xpos), static_cast<float>(ypos));
     }

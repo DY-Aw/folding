@@ -1,7 +1,6 @@
 #include "camera.h"
 
-Camera::Camera(float yaw, float pitch, float zoom) 
-    : yaw(yaw), pitch(pitch), zoom(zoom) {}
+Camera::Camera(float yaw, float pitch, float zoom) : yaw(yaw), pitch(pitch), zoom(zoom) {}
 
 glm::vec3 Camera::getFacing() {
     glm::vec3 facing;
@@ -11,9 +10,7 @@ glm::vec3 Camera::getFacing() {
     return glm::normalize(facing);
 }
 
-glm::mat4 Camera::getViewMatrix() {
-    return viewMatrix;
-}
+glm::mat4 Camera::getViewMatrix() { return viewMatrix; }
 
 void Camera::updateViewMatrix(Shader &shader) {
     position = -zoom * getFacing();
@@ -24,7 +21,6 @@ void Camera::updateViewMatrix(Shader &shader) {
 void Camera::orbit(float xoffset, float yoffset) {
     yaw += xoffset * orbitSens;
     pitch += yoffset * orbitSens;
-
     if (pitch > 89.0f)  pitch = 89.0f;
     if (pitch < -89.0f) pitch = -89.0f;
 }

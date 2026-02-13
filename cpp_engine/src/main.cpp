@@ -3,6 +3,7 @@
 #include "camera.h"
 #include "events.h"
 #include <iostream>
+#include <string>
 #include <vector>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -13,6 +14,10 @@ Mesh* paper;
 const unsigned int sw = 1500;
 const unsigned int sh = 900;
 const float yfov = glm::radians(45.0f);
+
+//  Debug: ----------------------------------
+const std::string model = "";
+//  -----------------------------------------
 
 int main() {
     glfwInit();
@@ -29,9 +34,8 @@ int main() {
 
     shader.use();
     shader.setMat4("projection", projection);
-    shader.setMat4("model", glm::mat4(1.0f));
 
-    paper = new Mesh();
+    paper = new Mesh(model);
     EventHandler eventhandler{window, &camera};
 
     glEnable(GL_DEPTH_TEST);
@@ -45,9 +49,7 @@ int main() {
         paper->draw();
         glfwSwapBuffers(window);
     }
-
     glDeleteProgram(shader.ID);
     glfwTerminate();
-
     return 0;
 }

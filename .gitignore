@@ -13,6 +13,7 @@
 
 # Build Directories
 build/
+models/
 bin/
 out/
 x64/
@@ -23,6 +24,7 @@ Release/
 cpp_engine/include/glm/
 cpp_engine/include/glad/
 cpp_engine/include/KHR/
+cpp_engine/include/nlohmann/
 cpp_engine/src/glad.c
 
 # === IDE & Editor Specifics ===

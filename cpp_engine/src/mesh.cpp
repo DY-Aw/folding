@@ -1,16 +1,55 @@
 #include "mesh.h"
 
-Mesh::Mesh() : VAO(0), VBO(0), EBO(0) {
-    this->points = {
-        { glm::vec3(-0.5f,  0.0f, 0.5f), 0 },
-        { glm::vec3( 0.5f,  0.0f, 0.5f), 1 },
-        { glm::vec3( 0.5f,  0.0f,-0.5f), 2 },
-        { glm::vec3(-0.5f,  0.0f,-0.5f), 3 }
-    };
-    this->faces = {
-        {{0, 1, 2, 3}, glm::vec3(0.0f, 1.0f, 0.0f)}
-    };
+Mesh::Mesh(const std::string model) : VAO(0), VBO(0), EBO(0) {
+    if (model.empty() || !loadFromJSON(model)) {
+        this->points = {
+            { glm::vec3(-0.5f,  0.0f, 0.5f), 0 },
+            { glm::vec3( 0.5f,  0.0f, 0.5f), 1 },
+            { glm::vec3( 0.5f,  0.0f,-0.5f), 2 },
+            { glm::vec3(-0.5f,  0.0f,-0.5f), 3 }
+        };
+        this->faces = {
+            Face({0, 1, 2, 3})
+        };
+        this->faces[0].normal = glm::vec3(0.0f, 1.0f, 0.0f);
+    }
     setupMesh();
+}
+
+bool Mesh::loadFromJSON(const std::string& model) {
+    this->points.clear();
+    this->faces.clear();
+    std::ifstream file("models/" + model);
+    if (!file.is_open()) {
+        std::cerr << "Could not open file: models/" << model << std::endl;
+        return false;
+    }
+    try {
+        json data = json::parse(file);
+        unsigned int p_id = 0;
+        for (const auto& p : data["points"]) {
+            glm::vec3 point(p[0], p[1], p[2]);
+            this->points.push_back(Point(point, p_id));
+            p_id++;
+        }
+        for (const auto& f : data["faces"]) {
+            std::vector<unsigned int> faceIndices = f.get<std::vector<unsigned int>>();
+            this->faces.push_back(Face(faceIndices));
+        }
+        for (auto& face : this->faces) {
+            if (face.points.size() < 3) continue;
+            glm::vec3 v0 = this->points[face.points[0]].position;
+            glm::vec3 v1 = this->points[face.points[1]].position;
+            glm::vec3 v2 = this->points[face.points[2]].position;
+            glm::vec3 edge1 = v1 - v0;
+            glm::vec3 edge2 = v2 - v0;
+            face.normal = glm::normalize(glm::cross(edge1, edge2));
+        }
+        return true;
+    } catch (json::parse_error& e) {
+        std::cerr << "JSON Parse Error: " << e.what() << std::endl;
+        return false;
+    }
 }
 
 void Mesh::setupMesh() {
@@ -57,9 +96,7 @@ void Mesh::triangulateMesh() {
     }
 }
 
-glm::mat4 Mesh::getModelMatrix() {
-    return modelMatrix;
-}
+glm::mat4 Mesh::getModelMatrix() { return modelMatrix; }
 
 void Mesh::updateModelMatrix(Shader &shader) {
     modelMatrix = glm::translate(glm::mat4(1.0f), position);
