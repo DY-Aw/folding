@@ -50,13 +50,16 @@ public:
     std::vector<Point> points;
     std::vector<Face> faces;
 
+    //----------Mesh-----------
     Mesh(std::string model);
-    glm::mat4 getModelMatrix();
-    void updateModelMatrix(Shader &shader);
     void updateBuffers();
     const void draw();
+    void updateModelMatrix(Shader &shader);
+    glm::mat4 getModelMatrix();
 
+    //---------Geometry---------
     void fold(Face* f1, Face* f2, Point p1, Point p2, double theta);
+
 private:
     MeshState meshState = MeshState::TOPOLOGY_DIRTY;
     unsigned int VAO, VBO, EBO;
@@ -64,13 +67,19 @@ private:
     glm::vec3 position = glm::vec3(0.0f);
     glm::vec3 rotation = glm::vec3(0.0f);
 
-    bool loadFromJSON(const std::string& model);
-    void setupMesh();
-    void updatePositions();
-    void updateTopology();
+    //---------Geometry---------
     void syncVertexData();
     void triangulateMesh();
     void calculateFaceNormal(Face* f);
+
+    //-----------GPU------------
+    void setupMesh();
+    void updatePositions();
+    void updateTopology();
+
+    //-----------IO-------------
+    bool loadFromJSON(const std::string& model);
+
 };
 
 #endif
