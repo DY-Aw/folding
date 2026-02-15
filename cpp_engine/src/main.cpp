@@ -1,5 +1,5 @@
 #include "shader.h"
-#include "mesh.h"
+#include "mesh/mesh.h"
 #include "camera.h"
 #include "events.h"
 #include <iostream>
@@ -37,15 +37,17 @@ int main() {
 
     paper = new Mesh(model);
     EventHandler eventhandler{window, &camera};
-
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glEnable(GL_DEPTH_TEST);
     while (!glfwWindowShouldClose(window)) {
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         shader.use();
         eventhandler.poll();
         camera.updateViewMatrix(shader);
         paper->updateModelMatrix(shader);
+
+        paper->updateBuffers();
+
         paper->draw();
         glfwSwapBuffers(window);
     }

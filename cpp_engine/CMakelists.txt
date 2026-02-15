@@ -2,6 +2,18 @@ cmake_minimum_required(VERSION 3.10)
 project(folding)
 
 set(CMAKE_CXX_STANDARD 17)
+set(TARGET main)
+set(SOURCES
+  src/main.cpp
+  src/camera.cpp
+  src/events.cpp
+  src/shader.cpp
+  src/glad.c
+  src/mesh/mesh.cpp
+  src/mesh/meshgeometry.cpp
+  src/mesh/meshgpu.cpp
+  src/mesh/meshio.cpp
+)
 
 include_directories(include)
 
@@ -16,12 +28,15 @@ FetchContent_MakeAvailable(glfw)
 
 find_package(OpenGL REQUIRED)
 
-add_executable(main src/main.cpp src/shader.cpp src/mesh.cpp src/camera.cpp src/events.cpp src/glad.c)
+add_executable(${TARGET} ${SOURCES})
 
-target_include_directories(main PRIVATE include)
+target_include_directories(${TARGET} PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/include"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src"
+)
 
-target_link_libraries(main glfw)
-target_link_libraries(main OpenGL::GL)
+target_link_libraries(${TARGET} glfw)
+target_link_libraries(${TARGET} OpenGL::GL)
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/models DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
