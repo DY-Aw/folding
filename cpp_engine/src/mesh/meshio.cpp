@@ -1,4 +1,11 @@
 #include "mesh.h"
+#include <glm/glm.hpp>
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 bool Mesh::loadFromJSON(const std::string& model) {
     points.clear();

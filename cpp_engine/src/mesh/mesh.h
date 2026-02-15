@@ -1,16 +1,12 @@
 #ifndef MESH_H
 #define MESH_H
 
-#include "shader.h"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
-#include <nlohmann/json.hpp>
 #include <vector>
 #include <string>
-#include <fstream>
 
-using json = nlohmann::json;
+class Shader;
 
 enum class MeshState {
     CLEAN = 0,
@@ -28,7 +24,7 @@ struct Vertex {
 };
 
 struct Point {
-    glm::vec3 position;
+    glm::dvec3 position;
     unsigned int id;
 
     Point(glm::vec3 pos, unsigned int _id) : position(pos), id(_id) {}
@@ -36,7 +32,7 @@ struct Point {
 
 struct Face {
     std::vector<unsigned int> points;
-    glm::vec3 normal;
+    glm::dvec3 normal;
     unsigned int id;
     bool dirty = false;
 

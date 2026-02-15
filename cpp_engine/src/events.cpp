@@ -1,4 +1,6 @@
 #include "events.h"
+#include "camera.h"
+#include <GLFW/glfw3.h>
 
 void EventHandler::static_cursor_callback(GLFWwindow* window, double xpos, double ypos) {
     auto* handler = static_cast<EventHandler*>(glfwGetWindowUserPointer(window));

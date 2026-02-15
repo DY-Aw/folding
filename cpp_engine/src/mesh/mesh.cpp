@@ -1,4 +1,9 @@
 #include "mesh.h"
+#include "shader.h"
+#include <glad/glad.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <string>
 
 Mesh::Mesh(const std::string model) : VAO(0), VBO(0), EBO(0) {
     if (model.empty() || !loadFromJSON(model)) {

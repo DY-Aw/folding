@@ -1,4 +1,7 @@
 #include "camera.h"
+#include "shader.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 Camera::Camera(float yaw, float pitch, float zoom) : yaw(yaw), pitch(pitch), zoom(zoom) {}
 
