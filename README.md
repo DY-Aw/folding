@@ -6,7 +6,7 @@ The project began with a simple 3D rendering engine written in Tkinter. A camera
 This prototype allowed basic folds by rotating faces, and I also implemented a movable camera. It was limited but proved that the concept was possible.
 
 <p align="center">
-  <img src="images/tkinter.png" alt="tkinter" width="400"><br>
+  <img src="docs/images/tkinter.png" alt="tkinter" width="400"><br>
   <sub><i>Early Tkinter prototype showing a basic paper model with a simple fold. This version used manual trigonometry for rotation rather than matrix transformations.</i></sub>
 </p>
 
@@ -18,26 +18,26 @@ I introduced a Face class. Faces are the different segments of the paper, separa
 - Line selection via 2D cursor proximity.
 
 <p align="center">
-  <img src="images/select_line.png" alt="select_line" width="400"><br>
+  <img src="docs/images/select_line.png" alt="select_line" width="400"><br>
   <sub><i>Line selection via cursor proximity</i></sub>
 </p>
 
 - Face selection via ray casting and Möller–Trumbore intersection.
 
 <p align="center">
-  <img src="images/select_face.png" alt="select_face" width="400"><br>
+  <img src="docs/images/select_face.png" alt="select_face" width="400"><br>
   <sub><i>Face selection using ray casting + Möller–Trumbore intersection</i></sub>
 </p>
 
 - Point placement along lines for defining creases.
 
 <p align="center">
-  <img src="images/select_vertex1.png" alt="select_vertex1" width="400"><br>
+  <img src="docs/images/select_vertex1.png" alt="select_vertex1" width="400"><br>
   <sub><i>Hovering while creating vertex</i></sub>
 </p>
 
 <p align="center">
-  <img src="images/select_vertex2.png" alt="select_vertex2" width="400"><br>
+  <img src="docs/images/select_vertex2.png" alt="select_vertex2" width="400"><br>
   <sub><i>After creating the vertex</i></sub>
 </p>
 
@@ -49,7 +49,7 @@ The major challenge was keeping connected faces aligned. Folding a single face w
 I added shading with colored faces (red front, white back) and a sunlight vector for contrast. This improved clarity but introduced bugs like faces flipping color unexpectedly, which I resolved after debugging small issues.
 
 <p align="center">
-  <img src="images/coloring.png" alt="coloring" width="400"><br>
+  <img src="docs/images/coloring.png" alt="coloring" width="400"><br>
   <sub><i>A folded paper model, showing red (top) and white (bottom) faces with shading applied. The lighting system darkens faces oriented away from the light source.</i></sub>
 </p>
 
@@ -59,7 +59,7 @@ I also ran into minor issues with interactions, such as faces rotating around th
 The project stalled at the point of needing a true constraint system to maintain connectivity between all faces during folds. My parent–child system was a partial solution, but I lacked the mathematical tools to implement a general solver. This became the main limitation of the project.
 
 <p align="center">
-  <img src="images/disconnection.png" alt="disconnection" width="400"><br>
+  <img src="docs/images/disconnection.png" alt="disconnection" width="400"><br>
   <sub><i>Attempt at multi-face folding. While the first constraint is solved (shared edge aligns), subsequent faces disconnect, creating the appearance of a ripped paper.</i></sub>
 </p>
 
