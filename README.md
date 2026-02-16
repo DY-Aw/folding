@@ -70,7 +70,3 @@ Despite not completing the physics, the project was a success in terms of learni
 - I developed insight into how constraint solving is critical in physics-based simulations.
 
 The most difficult aspects were crease splitting (defining geometry consistently) and constraint solving (keeping folds connected). In the future, with more advanced knowledge of physics and math, I plan to revisit this project and finish what I started.
-
-### Demo Video
-
-https://github.com/user-attachments/assets/bea7709a-307a-4b5e-8093-d013bdda1b02
